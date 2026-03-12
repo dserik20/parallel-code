@@ -11,13 +11,19 @@ import type { FileDiff, Hunk, DiffLine } from '../lib/unified-diff-parser';
 import type { FileDiffResult } from '../ipc/types';
 import { getDiffSelection, type DiffSelection } from '../lib/diff-selection';
 import { AskCodeCard } from './AskCodeCard';
-import { InlineQuestionInput } from './InlineQuestionInput';
+import { ReviewCommentCard } from './ReviewCommentCard';
+import { InlineInput } from './InlineInput';
+import type { ReviewAnnotation } from './review-types';
 
 interface ScrollingDiffViewProps {
   files: FileDiff[];
   scrollToPath: string | null;
   worktreePath: string;
   searchQuery?: string;
+  reviewAnnotations: ReviewAnnotation[];
+  onAnnotationAdd: (annotation: ReviewAnnotation) => void;
+  onAnnotationDismiss: (id: string) => void;
+  scrollToAnnotation?: ReviewAnnotation | null;
 }
 
 const STATUS_LABELS: Record<string, string> = {
@@ -42,6 +48,21 @@ function indicatorColor(type: DiffLine['type']): string {
   if (type === 'add') return theme.success;
   if (type === 'remove') return theme.error;
   return theme.fgSubtle;
+}
+
+/** Filter items that belong to a specific hunk by checking a line number key. */
+function itemsForHunk<T>(
+  items: T[],
+  filePath: string,
+  getPath: (item: T) => string,
+  getLine: (item: T) => number,
+  hunkStart: number,
+  nextHunkStart: number,
+): T[] {
+  return items.filter(
+    (item) =>
+      getPath(item) === filePath && getLine(item) >= hunkStart && getLine(item) < nextHunkStart,
+  );
 }
 
 interface HighlightRange {
@@ -220,8 +241,8 @@ function HunkView(props: {
   filePath: string;
   highlightedRange?: HighlightRange | null;
   pendingInputAfterLine?: number | null;
-  onAskSubmit?: (question: string) => void;
-  onAskDismiss?: () => void;
+  onSubmit?: (text: string, mode: 'review' | 'ask') => void;
+  onDismiss?: () => void;
 }) {
   const [highlighted, setHighlighted] = createSignal<string[] | null>(null);
 
@@ -250,9 +271,9 @@ function HunkView(props: {
               props.pendingInputAfterLine !== null && line.newLine === props.pendingInputAfterLine
             }
           >
-            <InlineQuestionInput
-              onSubmit={(q) => props.onAskSubmit?.(q)}
-              onDismiss={() => props.onAskDismiss?.()}
+            <InlineInput
+              onSubmit={(text, mode) => props.onSubmit?.(text, mode)}
+              onDismiss={() => props.onDismiss?.()}
             />
           </Show>
         </>
@@ -368,10 +389,12 @@ function FileSection(props: {
   searchQuery?: string;
   activeQuestions: ActiveQuestion[];
   onDismissQuestion: (id: string) => void;
+  reviewAnnotations: ReviewAnnotation[];
+  onDismissAnnotation: (id: string) => void;
   highlightedRange?: HighlightRange | null;
   pendingInput?: { filePath: string; afterLine: number } | null;
-  onAskSubmit: (question: string) => void;
-  onAskDismiss: () => void;
+  onSubmit: (text: string, mode: 'review' | 'ask') => void;
+  onDismiss: () => void;
 }) {
   const [collapsed, setCollapsed] = createSignal(false);
   const lang = () => detectLang(props.file.path);
@@ -539,32 +562,56 @@ function FileSection(props: {
                         ? props.pendingInput.afterLine
                         : null
                     }
-                    onAskSubmit={props.onAskSubmit}
-                    onAskDismiss={props.onAskDismiss}
+                    onSubmit={props.onSubmit}
+                    onDismiss={props.onDismiss}
                   />
-                  <For
-                    each={props.activeQuestions.filter((q) => {
-                      const nextHunkStart = props.file.hunks[hunkIdx() + 1]?.newStart ?? Infinity;
-                      return (
-                        q.filePath === props.file.path &&
-                        q.afterLine >= hunk.newStart &&
-                        q.afterLine < nextHunkStart
-                      );
-                    })}
-                  >
-                    {(q) => (
-                      <AskCodeCard
-                        requestId={q.id}
-                        question={q.question}
-                        filePath={q.filePath}
-                        startLine={q.startLine}
-                        endLine={q.endLine}
-                        selectedText={q.selectedText}
-                        worktreePath={props.worktreePath}
-                        onDismiss={() => props.onDismissQuestion(q.id)}
-                      />
-                    )}
-                  </For>
+                  {(() => {
+                    const nextStart = props.file.hunks[hunkIdx() + 1]?.newStart ?? Infinity;
+                    return (
+                      <>
+                        <For
+                          each={itemsForHunk(
+                            props.activeQuestions,
+                            props.file.path,
+                            (q) => q.filePath,
+                            (q) => q.afterLine,
+                            hunk.newStart,
+                            nextStart,
+                          )}
+                        >
+                          {(q) => (
+                            <AskCodeCard
+                              requestId={q.id}
+                              question={q.question}
+                              filePath={q.filePath}
+                              startLine={q.startLine}
+                              endLine={q.endLine}
+                              selectedText={q.selectedText}
+                              worktreePath={props.worktreePath}
+                              onDismiss={() => props.onDismissQuestion(q.id)}
+                            />
+                          )}
+                        </For>
+                        <For
+                          each={itemsForHunk(
+                            props.reviewAnnotations,
+                            props.file.path,
+                            (a) => a.filePath,
+                            (a) => a.endLine,
+                            hunk.newStart,
+                            nextStart,
+                          )}
+                        >
+                          {(a) => (
+                            <ReviewCommentCard
+                              annotation={a}
+                              onDismiss={() => props.onDismissAnnotation(a.id)}
+                            />
+                          )}
+                        </For>
+                      </>
+                    );
+                  })()}
                 </>
               )}
             </For>
@@ -626,13 +673,29 @@ export function ScrollingDiffView(props: ScrollingDiffViewProps) {
     });
   });
 
+  /** Scroll to a specific annotation (e.g. clicked in the sidebar). */
+  createEffect(() => {
+    const target = props.scrollToAnnotation;
+    if (!target) return;
+    const el = containerRef?.querySelector(
+      `[data-file-path="${CSS.escape(target.filePath)}"][data-new-line="${target.startLine}"]`,
+    );
+    if (el && containerRef) {
+      const containerTop = containerRef.getBoundingClientRect().top;
+      const elTop = el.getBoundingClientRect().top;
+      containerRef.scrollTop = elTop - containerTop + containerRef.scrollTop - 80;
+    }
+  });
+
   onMount(() => {
     function onMouseUp() {
       requestAnimationFrame(() => {
         const sel = getDiffSelection();
         if (!sel) {
-          setPendingInput(null);
-          setHighlightedRange(null);
+          // Don't clear if user is interacting with the inline input
+          if (!pendingInput()) {
+            setHighlightedRange(null);
+          }
           return;
         }
 
@@ -649,22 +712,33 @@ export function ScrollingDiffView(props: ScrollingDiffViewProps) {
     onCleanup(() => containerRef?.removeEventListener('mouseup', onMouseUp));
   });
 
-  function handleAsk(question: string) {
+  function handleSubmit(text: string, mode: 'review' | 'ask') {
     const sel = pendingInput();
     if (!sel) return;
-    const id = crypto.randomUUID();
-    setActiveQuestions((prev) => [
-      ...prev,
-      {
-        id,
+
+    if (mode === 'review') {
+      props.onAnnotationAdd({
+        id: crypto.randomUUID(),
         filePath: sel.filePath,
-        afterLine: sel.endLine,
-        question,
         startLine: sel.startLine,
         endLine: sel.endLine,
         selectedText: sel.selectedText,
-      },
-    ]);
+        comment: text,
+      });
+    } else {
+      setActiveQuestions((prev) => [
+        ...prev,
+        {
+          id: crypto.randomUUID(),
+          filePath: sel.filePath,
+          afterLine: sel.endLine,
+          question: text,
+          startLine: sel.startLine,
+          endLine: sel.endLine,
+          selectedText: sel.selectedText,
+        },
+      ]);
+    }
     setPendingInput(null);
     setHighlightedRange(null);
     window.getSelection()?.removeAllRanges();
@@ -699,6 +773,8 @@ export function ScrollingDiffView(props: ScrollingDiffViewProps) {
             searchQuery={props.searchQuery}
             activeQuestions={activeQuestions()}
             onDismissQuestion={dismissQuestion}
+            reviewAnnotations={props.reviewAnnotations}
+            onDismissAnnotation={props.onAnnotationDismiss}
             highlightedRange={highlightedRange()}
             pendingInput={(() => {
               const pi = pendingInput();
@@ -706,8 +782,8 @@ export function ScrollingDiffView(props: ScrollingDiffViewProps) {
                 ? { filePath: file.path, afterLine: pi.endLine }
                 : null;
             })()}
-            onAskSubmit={handleAsk}
-            onAskDismiss={dismissInput}
+            onSubmit={handleSubmit}
+            onDismiss={dismissInput}
           />
         )}
       </For>

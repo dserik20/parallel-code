@@ -5,8 +5,12 @@ import { IPC } from '../../electron/ipc/channels';
 import { theme } from '../lib/theme';
 import { sf } from '../lib/fontScale';
 import { parseUnifiedDiff } from '../lib/unified-diff-parser';
+import { evictStaleAnnotations } from '../lib/review-eviction';
 import { ScrollingDiffView } from './ScrollingDiffView';
+import { ReviewSidebar } from './ReviewSidebar';
+import { sendPrompt } from '../store/tasks';
 import type { FileDiff } from '../lib/unified-diff-parser';
+import type { ReviewAnnotation } from './review-types';
 
 interface DiffViewerDialogProps {
   /** Which file to auto-scroll to (the one the user clicked). Null = closed. */
@@ -17,6 +21,21 @@ interface DiffViewerDialogProps {
   projectRoot?: string;
   /** Branch name for branch-based fallback when worktree doesn't exist */
   branchName?: string | null;
+  taskId?: string;
+  agentId?: string;
+}
+
+function compileReview(annotations: ReviewAnnotation[]): string {
+  const lines = ['Code review feedback for your changes:\n'];
+  for (const a of annotations) {
+    lines.push(`## ${a.filePath} (lines ${a.startLine}-${a.endLine})`);
+    lines.push('```');
+    lines.push(a.selectedText);
+    lines.push('```');
+    lines.push(a.comment);
+    lines.push('');
+  }
+  return lines.join('\n');
 }
 
 export function DiffViewerDialog(props: DiffViewerDialogProps) {
@@ -24,6 +43,16 @@ export function DiffViewerDialog(props: DiffViewerDialogProps) {
   const [loading, setLoading] = createSignal(false);
   const [error, setError] = createSignal('');
   const [searchQuery, setSearchQuery] = createSignal('');
+  const [reviewAnnotations, setReviewAnnotations] = createSignal<ReviewAnnotation[]>([]);
+  const [sidebarOpen, setSidebarOpen] = createSignal(false);
+  const [scrollTarget, setScrollTarget] = createSignal<ReviewAnnotation | null>(null, {
+    equals: false,
+  });
+
+  // Auto-open sidebar when annotations are added
+  createEffect(() => {
+    if (reviewAnnotations().length > 0) setSidebarOpen(true);
+  });
 
   let fetchGeneration = 0;
   let searchInputRef: HTMLInputElement | undefined;
@@ -72,7 +101,9 @@ export function DiffViewerDialog(props: DiffViewerDialogProps) {
       })
       .then((rawDiff) => {
         if (thisGen !== fetchGeneration) return;
-        setParsedFiles(parseUnifiedDiff(rawDiff));
+        const newFiles = parseUnifiedDiff(rawDiff);
+        setParsedFiles(newFiles);
+        setReviewAnnotations((prev) => evictStaleAnnotations(prev, newFiles));
       })
       .catch((err) => {
         if (thisGen !== fetchGeneration) return;
@@ -96,6 +127,25 @@ export function DiffViewerDialog(props: DiffViewerDialogProps) {
         sum + f.hunks.reduce((s, h) => s + h.lines.filter((l) => l.type === 'remove').length, 0),
       0,
     );
+
+  function dismissAnnotation(id: string) {
+    setReviewAnnotations((prev) => prev.filter((a) => a.id !== id));
+  }
+
+  async function submitReview() {
+    const taskId = props.taskId;
+    const agentId = props.agentId;
+    if (!taskId || !agentId) return;
+    const prompt = compileReview(reviewAnnotations());
+    try {
+      await sendPrompt(taskId, agentId, prompt);
+      setReviewAnnotations([]);
+      setSidebarOpen(false);
+      props.onClose();
+    } catch {
+      // Keep annotations intact so user can retry
+    }
+  }
 
   const countMatches = () => {
     const q = searchQuery().toLowerCase();
@@ -169,6 +219,23 @@ export function DiffViewerDialog(props: DiffViewerDialogProps) {
             -{totalRemoved()}
           </span>
 
+          <Show when={reviewAnnotations().length > 0}>
+            <button
+              onClick={() => setSidebarOpen(!sidebarOpen())}
+              style={{
+                background: sidebarOpen() ? theme.warning : 'transparent',
+                color: sidebarOpen() ? '#fff' : theme.warning,
+                border: `1px solid ${theme.warning}`,
+                'font-size': sf(11),
+                padding: '2px 10px',
+                'border-radius': '4px',
+                cursor: 'pointer',
+              }}
+            >
+              Comments ({reviewAnnotations().length})
+            </button>
+          </Show>
+
           <span style={{ flex: '1' }} />
 
           <input
@@ -216,39 +283,55 @@ export function DiffViewerDialog(props: DiffViewerDialogProps) {
         </div>
 
         {/* Body */}
-        <div style={{ flex: '1', overflow: 'hidden' }}>
-          <Show when={loading()}>
-            <div
-              style={{
-                padding: '40px',
-                'text-align': 'center',
-                color: theme.fgMuted,
-                'font-size': sf(13),
-              }}
-            >
-              Loading diffs...
-            </div>
-          </Show>
+        <div style={{ flex: '1', overflow: 'hidden', display: 'flex' }}>
+          <div style={{ flex: '1', overflow: 'hidden' }}>
+            <Show when={loading()}>
+              <div
+                style={{
+                  padding: '40px',
+                  'text-align': 'center',
+                  color: theme.fgMuted,
+                  'font-size': sf(13),
+                }}
+              >
+                Loading diffs...
+              </div>
+            </Show>
 
-          <Show when={error()}>
-            <div
-              style={{
-                padding: '40px',
-                'text-align': 'center',
-                color: theme.error,
-                'font-size': sf(13),
-              }}
-            >
-              {error()}
-            </div>
-          </Show>
+            <Show when={error()}>
+              <div
+                style={{
+                  padding: '40px',
+                  'text-align': 'center',
+                  color: theme.error,
+                  'font-size': sf(13),
+                }}
+              >
+                {error()}
+              </div>
+            </Show>
 
-          <Show when={!loading() && !error()}>
-            <ScrollingDiffView
-              files={parsedFiles()}
-              scrollToPath={props.scrollToFile}
-              worktreePath={props.worktreePath}
-              searchQuery={searchQuery()}
+            <Show when={!loading() && !error()}>
+              <ScrollingDiffView
+                files={parsedFiles()}
+                scrollToPath={props.scrollToFile}
+                worktreePath={props.worktreePath}
+                searchQuery={searchQuery()}
+                reviewAnnotations={reviewAnnotations()}
+                onAnnotationAdd={(a) => setReviewAnnotations((prev) => [...prev, a])}
+                onAnnotationDismiss={dismissAnnotation}
+                scrollToAnnotation={scrollTarget()}
+              />
+            </Show>
+          </div>
+
+          <Show when={sidebarOpen() && reviewAnnotations().length > 0}>
+            <ReviewSidebar
+              annotations={reviewAnnotations()}
+              canSubmit={!!props.taskId && !!props.agentId}
+              onDismiss={dismissAnnotation}
+              onScrollTo={setScrollTarget}
+              onSubmit={submitReview}
             />
           </Show>
         </div>

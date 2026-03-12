@@ -1310,6 +1310,8 @@ export function TaskPanel(props: TaskPanelProps) {
         projectRoot={getProject(props.task.projectId)?.path}
         branchName={props.task.branchName}
         onClose={() => setDiffScrollTarget(null)}
+        taskId={props.task.id}
+        agentId={props.task.agentIds[0]}
       />
       <EditProjectDialog project={editingProject()} onClose={() => setEditingProjectId(null)} />
       <Dialog open={planFullscreen()} onClose={() => setPlanFullscreen(false)} width="800px">
