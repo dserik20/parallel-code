@@ -297,7 +297,9 @@ function App() {
         fileName: task.planFileName,
       }).then((result) => {
         if (result) setPlanContent(taskId, result.content, result.fileName);
-      }).catch(() => {});
+      }).catch((err) => {
+        console.warn(`Failed to restore plan for task ${taskId}:`, err);
+      });
     }
 
     await validateProjectPaths();

@@ -86,7 +86,7 @@ function readNewestPlan(plansDir: string): { content: string; fileName: string; 
 }
 
 /** Reads the newest plan across multiple directories. */
-export function readNewestPlanFromDirs(plansDirs: string[]): { content: string; fileName: string } | null {
+function readNewestPlanFromDirs(plansDirs: string[]): { content: string; fileName: string } | null {
   let best: { content: string; fileName: string; mtime: number } | null = null;
   for (const dir of plansDirs) {
     const result = readNewestPlan(dir);

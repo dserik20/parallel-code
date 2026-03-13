@@ -298,8 +298,9 @@ export function registerAllHandlers(win: BrowserWindow): void {
 
   // --- Plan content (one-shot read) ---
   ipcMain.handle(IPC.ReadPlanContent, (_e, args) => {
-    assertString(args.worktreePath, 'worktreePath');
+    validatePath(args.worktreePath, 'worktreePath');
     const fileName = typeof args.fileName === 'string' ? args.fileName : undefined;
+    if (fileName) validateRelativePath(fileName, 'fileName');
     return readPlanForWorktree(args.worktreePath, fileName);
   });
 
