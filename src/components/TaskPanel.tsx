@@ -619,7 +619,7 @@ export function TaskPanel(props: TaskPanelProps) {
                         />
                         <button
                           ref={reviewPlanBtnRef}
-                          class="btn-secondary"
+                          class="btn-secondary review-plan-btn"
                           style={{
                             position: 'absolute',
                             bottom: '8px',

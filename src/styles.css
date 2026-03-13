@@ -382,6 +382,10 @@ textarea::placeholder {
   border-color: color-mix(in srgb, var(--accent) 45%, var(--border)) !important;
 }
 
+.review-plan-btn:hover {
+  background: color-mix(in srgb, var(--accent) 8%, var(--bg-input)) !important;
+}
+
 .dialog-overlay .btn-secondary:focus,
 .dialog-overlay .btn-primary:focus,
 .dialog-overlay .btn-danger:focus {
