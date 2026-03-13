@@ -219,6 +219,25 @@ export function stopPlanWatcher(taskId: string): void {
   watchers.delete(taskId);
 }
 
+/** Read a specific plan file from a worktree, or the newest if no name given. */
+export function readPlanForWorktree(worktreePath: string, fileName?: string): { content: string; fileName: string } | null {
+  const plansDirs = PLAN_DIRS.map((rel) => path.join(worktreePath, rel));
+
+  if (fileName) {
+    for (const dir of plansDirs) {
+      try {
+        const content = fs.readFileSync(path.join(dir, fileName), 'utf-8');
+        return { content, fileName };
+      } catch {
+        // Not in this directory
+      }
+    }
+    return null;
+  }
+
+  return readNewestPlanFromDirs(plansDirs);
+}
+
 /** Stops all plan watchers. */
 export function stopAllPlanWatchers(): void {
   for (const taskId of watchers.keys()) {
