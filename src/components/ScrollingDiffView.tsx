@@ -24,6 +24,7 @@ interface ScrollingDiffViewProps {
   onAnnotationAdd: (annotation: ReviewAnnotation) => void;
   onAnnotationDismiss: (id: string) => void;
   scrollToAnnotation?: ReviewAnnotation | null;
+  onScrollRef?: (el: HTMLDivElement) => void;
 }
 
 const STATUS_LABELS: Record<string, string> = {
@@ -754,7 +755,7 @@ export function ScrollingDiffView(props: ScrollingDiffViewProps) {
 
   return (
     <div
-      ref={containerRef}
+      ref={(el) => { containerRef = el; props.onScrollRef?.(el); }}
       style={{
         height: '100%',
         'overflow-y': 'auto',

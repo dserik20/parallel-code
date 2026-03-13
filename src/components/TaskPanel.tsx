@@ -90,6 +90,7 @@ export function TaskPanel(props: TaskPanelProps) {
   let promptRef: HTMLTextAreaElement | undefined;
   let notesRef: HTMLTextAreaElement | undefined;
   let reviewPlanBtnRef: HTMLButtonElement | undefined;
+  let planScrollRef: HTMLDivElement | undefined;
   let changedFilesRef: HTMLDivElement | undefined;
   let shellToolbarRef: HTMLDivElement | undefined;
   let titleEditHandle: EditableTextHandle | undefined;
@@ -108,7 +109,7 @@ export function TaskPanel(props: TaskPanelProps) {
     registerFocusFn(`${id}:title`, () => titleEditHandle?.startEdit());
     registerFocusFn(`${id}:notes`, () => {
       if (notesTab() === 'plan') {
-        reviewPlanBtnRef?.focus();
+        planScrollRef?.focus();
       } else {
         notesRef?.focus();
       }
@@ -604,6 +605,8 @@ export function TaskPanel(props: TaskPanelProps) {
                         }}
                       >
                         <div
+                          ref={planScrollRef}
+                          tabIndex={0}
                           class="plan-markdown"
                           style={{
                             flex: '1',
@@ -613,6 +616,20 @@ export function TaskPanel(props: TaskPanelProps) {
                             color: theme.fg,
                             'font-size': sf(11),
                             'font-family': "'JetBrains Mono', monospace",
+                            outline: 'none',
+                          }}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') { e.preventDefault(); setPlanFullscreen(true); return; }
+                            const step = 40;
+                            const page = Math.max(100, planScrollRef!.clientHeight - 40);
+                            switch (e.key) {
+                              case 'ArrowDown':  e.preventDefault(); planScrollRef!.scrollTop += step; break;
+                              case 'ArrowUp':    e.preventDefault(); planScrollRef!.scrollTop -= step; break;
+                              case 'PageDown':   e.preventDefault(); planScrollRef!.scrollTop += page; break;
+                              case 'PageUp':     e.preventDefault(); planScrollRef!.scrollTop -= page; break;
+                              case 'Home':       e.preventDefault(); planScrollRef!.scrollTop = 0; break;
+                              case 'End':        e.preventDefault(); planScrollRef!.scrollTop = planScrollRef!.scrollHeight; break;
+                            }
                           }}
                           // eslint-disable-next-line solid/no-innerhtml -- plan files are local, written by Claude Code in the worktree
                           innerHTML={planHtml()}

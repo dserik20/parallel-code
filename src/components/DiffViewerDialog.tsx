@@ -2,6 +2,7 @@ import { Show, createSignal, createEffect, onCleanup } from 'solid-js';
 import { Dialog } from './Dialog';
 import { invoke } from '../lib/ipc';
 import { IPC } from '../../electron/ipc/channels';
+import { createDialogScroll } from '../lib/dialog-scroll';
 import { theme } from '../lib/theme';
 import { sf } from '../lib/fontScale';
 import { parseUnifiedDiff } from '../lib/unified-diff-parser';
@@ -86,6 +87,12 @@ function DiffViewerContent(props: DiffViewerDialogProps) {
 
   let fetchGeneration = 0;
   let searchInputRef: HTMLInputElement | undefined;
+  let diffScrollRef: HTMLDivElement | undefined;
+
+  createDialogScroll(
+    () => diffScrollRef,
+    () => props.scrollToFile !== null,
+  );
 
   // Ctrl+F / Cmd+F handler to focus the search input
   createEffect(() => {
@@ -305,6 +312,7 @@ function DiffViewerContent(props: DiffViewerDialogProps) {
               onAnnotationAdd={review.addAnnotation}
               onAnnotationDismiss={review.dismissAnnotation}
               scrollToAnnotation={review.scrollTarget()}
+              onScrollRef={(el) => { diffScrollRef = el; }}
             />
           </Show>
         </div>

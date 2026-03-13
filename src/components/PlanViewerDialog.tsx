@@ -1,5 +1,6 @@
 import { Show, For, createSignal, createEffect } from 'solid-js';
 import { Dialog } from './Dialog';
+import { createDialogScroll } from '../lib/dialog-scroll';
 import { ReviewProvider, useReview } from './ReviewProvider';
 import { ReviewCommentsButton, ReviewSidebarPanel } from './ReviewSidebarPanel';
 import { ReviewCommentCard } from './ReviewCommentCard';
@@ -39,9 +40,10 @@ export function PlanViewerDialog(props: PlanViewerDialogProps) {
     <Dialog
       open={props.open}
       onClose={props.onClose}
-      width="70vw"
+      width="fit-content"
       panelStyle={{
         height: '70vh',
+        'min-width': '360px',
         'max-width': '1000px',
         overflow: 'hidden',
         padding: '0',
@@ -87,6 +89,11 @@ function PlanViewerContent(props: PlanViewerContentProps) {
   const [selectionY, setSelectionY] = createSignal(0);
   const [cardOffsets, setCardOffsets] = createSignal<Record<string, number>>({});
   const [highlightRects, setHighlightRects] = createSignal<HighlightRect[]>([]);
+
+  createDialogScroll(
+    () => scrollRef,
+    () => !!props.planContent,
+  );
 
   // Scroll to annotation when scrollTarget changes
   createEffect(() => {
