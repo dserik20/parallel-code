@@ -174,7 +174,11 @@ export function startPlanWatcher(win: BrowserWindow, taskId: string, worktreePat
   const claudePlansDir = path.join(worktreePath, '.claude', 'plans');
   fs.mkdirSync(claudePlansDir, { recursive: true });
 
-  sendPlanContent(win, taskId, plansDirs);
+  // Don't read existing plans on startup — fresh sessions should not
+  // inherit stale plan files (e.g. committed docs/plans/ files that appear
+  // in every worktree).  Restored/uncollapsed tasks already have their plan
+  // content populated via the ReadPlanContent IPC in App.tsx.  New plans
+  // written by the agent are picked up by the fs.watch onChange handler.
 
   const entry: PlanWatcher = {
     fsWatchers: [],
