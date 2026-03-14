@@ -295,11 +295,13 @@ function App() {
       invoke<{ content: string; fileName: string } | null>(IPC.ReadPlanContent, {
         worktreePath: task.worktreePath,
         fileName: task.planFileName,
-      }).then((result) => {
-        if (result) setPlanContent(taskId, result.content, result.fileName);
-      }).catch((err) => {
-        console.warn(`Failed to restore plan for task ${taskId}:`, err);
-      });
+      })
+        .then((result) => {
+          if (result) setPlanContent(taskId, result.content, result.fileName);
+        })
+        .catch((err) => {
+          console.warn(`Failed to restore plan for task ${taskId}:`, err);
+        });
     }
 
     await validateProjectPaths();

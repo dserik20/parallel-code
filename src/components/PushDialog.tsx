@@ -69,7 +69,11 @@ export function PushDialog(props: PushDialogProps) {
   }
 
   return (
-    <Dialog open={props.open} onClose={() => (pushing() ? props.onClose() : props.onDone(false))} width="480px">
+    <Dialog
+      open={props.open}
+      onClose={() => (pushing() ? props.onClose() : props.onDone(false))}
+      width="480px"
+    >
       <h2
         style={{
           margin: '0',

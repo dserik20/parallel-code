@@ -643,17 +643,39 @@ export function TaskPanel(props: TaskPanelProps) {
                             outline: 'none',
                           }}
                           onKeyDown={(e) => {
-                            if (e.key === 'Enter') { e.preventDefault(); setPlanFullscreen(true); return; }
+                            if (e.key === 'Enter') {
+                              e.preventDefault();
+                              setPlanFullscreen(true);
+                              return;
+                            }
                             if (!planScrollRef) return;
                             const step = 40;
                             const page = Math.max(100, planScrollRef.clientHeight - 40);
                             switch (e.key) {
-                              case 'ArrowDown':  e.preventDefault(); planScrollRef.scrollTop += step; break;
-                              case 'ArrowUp':    e.preventDefault(); planScrollRef.scrollTop -= step; break;
-                              case 'PageDown':   e.preventDefault(); planScrollRef.scrollTop += page; break;
-                              case 'PageUp':     e.preventDefault(); planScrollRef.scrollTop -= page; break;
-                              case 'Home':       e.preventDefault(); planScrollRef.scrollTop = 0; break;
-                              case 'End':        e.preventDefault(); planScrollRef.scrollTop = planScrollRef.scrollHeight; break;
+                              case 'ArrowDown':
+                                e.preventDefault();
+                                planScrollRef.scrollTop += step;
+                                break;
+                              case 'ArrowUp':
+                                e.preventDefault();
+                                planScrollRef.scrollTop -= step;
+                                break;
+                              case 'PageDown':
+                                e.preventDefault();
+                                planScrollRef.scrollTop += page;
+                                break;
+                              case 'PageUp':
+                                e.preventDefault();
+                                planScrollRef.scrollTop -= page;
+                                break;
+                              case 'Home':
+                                e.preventDefault();
+                                planScrollRef.scrollTop = 0;
+                                break;
+                              case 'End':
+                                e.preventDefault();
+                                planScrollRef.scrollTop = planScrollRef.scrollHeight;
+                                break;
                             }
                           }}
                           // eslint-disable-next-line solid/no-innerhtml -- plan files are local, written by Claude Code in the worktree
@@ -756,7 +778,9 @@ export function TaskPanel(props: TaskPanelProps) {
               ref={shellToolbarRef}
               class="focusable-panel shell-toolbar-panel"
               tabIndex={0}
-              onClick={() => setTaskFocusedPanel(props.task.id, `shell-toolbar:${shellToolbarIdx()}`)}
+              onClick={() =>
+                setTaskFocusedPanel(props.task.id, `shell-toolbar:${shellToolbarIdx()}`)
+              }
               onFocus={() => setShellToolbarFocused(true)}
               onBlur={() => setShellToolbarFocused(false)}
               onKeyDown={(e) => {

@@ -755,7 +755,10 @@ export function ScrollingDiffView(props: ScrollingDiffViewProps) {
 
   return (
     <div
-      ref={(el) => { containerRef = el; props.onScrollRef?.(el); }}
+      ref={(el) => {
+        containerRef = el;
+        props.onScrollRef?.(el);
+      }}
       style={{
         height: '100%',
         'overflow-y': 'auto',

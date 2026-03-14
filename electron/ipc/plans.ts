@@ -51,7 +51,9 @@ export function ensurePlansDirectory(worktreePath: string): void {
 }
 
 /** Reads the newest `.md` file by mtime from a single plans directory. */
-function readNewestPlan(plansDir: string): { content: string; fileName: string; mtime: number } | null {
+function readNewestPlan(
+  plansDir: string,
+): { content: string; fileName: string; mtime: number } | null {
   let entries: fs.Dirent[];
   try {
     entries = fs.readdirSync(plansDir, { withFileTypes: true });
@@ -224,7 +226,10 @@ export function stopPlanWatcher(taskId: string): void {
 }
 
 /** Read a specific plan file from a worktree, or the newest if no name given. */
-export function readPlanForWorktree(worktreePath: string, fileName?: string): { content: string; fileName: string } | null {
+export function readPlanForWorktree(
+  worktreePath: string,
+  fileName?: string,
+): { content: string; fileName: string } | null {
   const plansDirs = PLAN_DIRS.map((rel) => path.join(worktreePath, rel));
 
   if (fileName) {
