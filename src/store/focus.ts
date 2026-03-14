@@ -1,6 +1,8 @@
 import { batch } from 'solid-js';
 import { store, setStore } from './core';
 import { setActiveTask } from './navigation';
+import { computeSidebarTaskOrder } from './sidebar-order';
+import { uncollapseTask } from './tasks';
 
 // Imperative focus registry: components register focus callbacks on mount
 const focusRegistry = new Map<string, () => void>();
@@ -148,7 +150,8 @@ export function navigateRow(direction: 'up' | 'down'): void {
   }
 
   if (store.sidebarFocused) {
-    const { taskOrder, projects, sidebarFocusedProjectId, sidebarFocusedTaskId } = store;
+    const { projects, sidebarFocusedProjectId, sidebarFocusedTaskId } = store;
+    const allTasks = computeSidebarTaskOrder();
 
     if (sidebarFocusedProjectId !== null) {
       // Project mode: navigate within projects
@@ -161,30 +164,30 @@ export function navigateRow(direction: 'up' | 'down'): void {
       } else {
         if (projectIdx < projects.length - 1) {
           setStore('sidebarFocusedProjectId', projects[projectIdx + 1].id);
-        } else if (taskOrder.length > 0) {
+        } else if (allTasks.length > 0) {
           // Past last project: enter task mode
           setStore('sidebarFocusedProjectId', null);
-          setStore('sidebarFocusedTaskId', taskOrder[0]);
+          setStore('sidebarFocusedTaskId', allTasks[0]);
         }
       }
       return;
     }
 
     // Task mode: navigate within tasks (highlight only, don't activate)
-    if (taskOrder.length === 0 && projects.length === 0) return;
-    const currentIdx = sidebarFocusedTaskId ? taskOrder.indexOf(sidebarFocusedTaskId) : -1;
+    if (allTasks.length === 0 && projects.length === 0) return;
+    const currentIdx = sidebarFocusedTaskId ? allTasks.indexOf(sidebarFocusedTaskId) : -1;
     if (direction === 'up') {
       if (currentIdx <= 0 && projects.length > 0) {
         // At first task (or no task): enter project mode at last project
         setStore('sidebarFocusedTaskId', null);
         setStore('sidebarFocusedProjectId', projects[projects.length - 1].id);
       } else if (currentIdx > 0) {
-        setStore('sidebarFocusedTaskId', taskOrder[currentIdx - 1]);
+        setStore('sidebarFocusedTaskId', allTasks[currentIdx - 1]);
       }
     } else {
-      if (taskOrder.length === 0) return;
-      const nextIdx = Math.min(taskOrder.length - 1, currentIdx + 1);
-      setStore('sidebarFocusedTaskId', taskOrder[nextIdx]);
+      if (allTasks.length === 0) return;
+      const nextIdx = Math.min(allTasks.length - 1, currentIdx + 1);
+      setStore('sidebarFocusedTaskId', allTasks[nextIdx]);
     }
     return;
   }
@@ -230,6 +233,11 @@ export function navigateColumn(direction: 'left' | 'right'): void {
     if (direction === 'right') {
       const targetTaskId = store.sidebarFocusedTaskId ?? taskId;
       if (targetTaskId) {
+        // If the focused task is collapsed, uncollapse it instead of navigating into it
+        if (store.tasks[targetTaskId]?.collapsed) {
+          uncollapseTask(targetTaskId);
+          return;
+        }
         if (targetTaskId !== store.activeTaskId) setActiveTask(targetTaskId);
         unfocusSidebar();
         setTaskFocusedPanel(targetTaskId, getTaskFocusedPanel(targetTaskId));
