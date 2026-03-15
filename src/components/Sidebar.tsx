@@ -151,14 +151,7 @@ export function Sidebar() {
   }
 
   function handleRemoveProject(projectId: string) {
-    const hasTasks =
-      store.taskOrder.some((tid) => store.tasks[tid]?.projectId === projectId) ||
-      store.collapsedTaskOrder.some((tid) => store.tasks[tid]?.projectId === projectId);
-    if (hasTasks) {
-      setConfirmRemove(projectId);
-    } else {
-      removeProject(projectId);
-    }
+    setConfirmRemove(projectId);
   }
 
   function computeDropIndex(clientY: number, fromIdx: number): number {
@@ -679,23 +672,38 @@ export function Sidebar() {
         <EditProjectDialog project={editingProject()} onClose={() => setEditingProject(null)} />
 
         {/* Confirm remove project dialog */}
-        <ConfirmDialog
-          open={confirmRemove() !== null}
-          title="Remove project?"
-          message={`This project has ${
-            [...store.taskOrder, ...store.collapsedTaskOrder].filter(
-              (tid) => store.tasks[tid]?.projectId === confirmRemove(),
-            ).length
-          } open task(s). Removing it will also close all tasks, delete their worktrees and branches.`}
-          confirmLabel="Remove all"
-          danger
-          onConfirm={() => {
-            const id = confirmRemove();
-            if (id) removeProjectWithTasks(id);
-            setConfirmRemove(null);
-          }}
-          onCancel={() => setConfirmRemove(null)}
-        />
+        {(() => {
+          const id = confirmRemove();
+          const taskCount = id
+            ? [...store.taskOrder, ...store.collapsedTaskOrder].filter(
+                (tid) => store.tasks[tid]?.projectId === id,
+              ).length
+            : 0;
+          return (
+            <ConfirmDialog
+              open={id !== null}
+              title="Remove project?"
+              message={
+                taskCount > 0
+                  ? `This project has ${taskCount} open task(s). Removing it will also close all tasks, delete their worktrees and branches.`
+                  : 'Are you sure you want to remove this project?'
+              }
+              confirmLabel={taskCount > 0 ? 'Remove all' : 'Remove'}
+              danger
+              onConfirm={() => {
+                if (id) {
+                  if (taskCount > 0) {
+                    removeProjectWithTasks(id);
+                  } else {
+                    removeProject(id);
+                  }
+                }
+                setConfirmRemove(null);
+              }}
+              onCancel={() => setConfirmRemove(null)}
+            />
+          );
+        })()}
       </div>
       {/* Resize handle */}
       <div
