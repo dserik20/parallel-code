@@ -73,6 +73,12 @@ When you're happy with the result, merge the branch back to main from the sideba
 
 </details>
 
+## Demo
+
+<p align="center">
+  <video src="screens/showcase.mp4" width="800" controls></video>
+</p>
+
 ## Getting Started
 
 1. **Download** the latest release for your platform from the [releases page](https://github.com/johannesjo/parallel-code/releases/latest):
