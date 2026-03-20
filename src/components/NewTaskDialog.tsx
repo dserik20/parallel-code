@@ -52,6 +52,7 @@ export function NewTaskDialog(props: NewTaskDialogProps) {
   const [branchPrefix, setBranchPrefix] = createSignal('');
   let promptRef!: HTMLTextAreaElement;
   let formRef!: HTMLFormElement;
+  let buildOutputRef!: HTMLPreElement;
 
   const focusableSelector =
     'textarea:not(:disabled), input:not(:disabled), select:not(:disabled), button:not(:disabled), [tabindex]:not([tabindex="-1"])';
@@ -113,6 +114,10 @@ export function NewTaskDialog(props: NewTaskDialogProps) {
     setDirectMode(false);
     setSkipPermissions(false);
     setDockerMode(false);
+    setDockerImageReady(null);
+    setDockerBuilding(false);
+    setDockerBuildOutput('');
+    setDockerBuildError('');
 
     void (async () => {
       // Check Docker availability in background
@@ -226,16 +231,28 @@ export function NewTaskDialog(props: NewTaskDialogProps) {
     }
   });
 
-  // Check if the default Docker image exists when Docker mode is enabled
+  // Check if the default Docker image exists when Docker mode is enabled (debounced)
+  let checkTimer: ReturnType<typeof setTimeout>;
   createEffect(() => {
     if (dockerMode() && store.dockerAvailable) {
       const image = store.dockerImage || 'parallel-code-agent:latest';
-      invoke<boolean>(IPC.CheckDockerImageExists, { image }).then(
-        (exists) => setDockerImageReady(exists),
-        () => setDockerImageReady(false),
-      );
+      clearTimeout(checkTimer);
+      checkTimer = setTimeout(() => {
+        invoke<boolean>(IPC.CheckDockerImageExists, { image }).then(
+          (exists) => setDockerImageReady(exists),
+          () => setDockerImageReady(false),
+        );
+      }, 300);
     } else {
       setDockerImageReady(null);
+    }
+  });
+
+  // Auto-scroll build output to bottom
+  createEffect(() => {
+    dockerBuildOutput(); // track
+    if (buildOutputRef) {
+      buildOutputRef.scrollTop = buildOutputRef.scrollHeight;
     }
   });
 
@@ -765,6 +782,7 @@ export function NewTaskDialog(props: NewTaskDialogProps) {
                 </div>
                 <Show when={dockerBuildOutput()}>
                   <pre
+                    ref={buildOutputRef}
                     style={{
                       'font-size': '10px',
                       color: theme.fgSubtle,

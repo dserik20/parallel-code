@@ -271,21 +271,14 @@ export function TaskPanel(props: TaskPanelProps) {
                 {props.task.branchName}
               </span>
             </Show>
-            <EditableText
-              value={props.task.name}
-              onCommit={(v) => updateTaskName(props.task.id, v)}
-              class="editable-text"
-              title={props.task.savedInitialPrompt}
-              ref={(h) => (titleEditHandle = h)}
-            />
             <Show when={props.task.dockerMode}>
               <span
                 style={{
                   'font-size': '11px',
                   'font-weight': '600',
-                  padding: '2px 6px',
+                  padding: '2px 8px',
                   'border-radius': '4px',
-                  background: `color-mix(in srgb, ${theme.fgMuted} 12%, transparent)`,
+                  background: `color-mix(in srgb, ${theme.fgMuted} 15%, transparent)`,
                   color: theme.fgMuted,
                   border: `1px solid color-mix(in srgb, ${theme.fgMuted} 25%, transparent)`,
                   'flex-shrink': '0',
@@ -295,6 +288,13 @@ export function TaskPanel(props: TaskPanelProps) {
                 Docker
               </span>
             </Show>
+            <EditableText
+              value={props.task.name}
+              onCommit={(v) => updateTaskName(props.task.id, v)}
+              class="editable-text"
+              title={props.task.savedInitialPrompt}
+              ref={(h) => (titleEditHandle = h)}
+            />
           </div>
           <div style={{ display: 'flex', gap: '4px', 'margin-left': '8px', 'flex-shrink': '0' }}>
             <Show when={!props.task.directMode}>

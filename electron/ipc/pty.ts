@@ -2,8 +2,12 @@ import * as pty from 'node-pty';
 import { execFileSync, execFile, spawn as cpSpawn } from 'child_process';
 import fs from 'fs';
 import path from 'path';
+import { fileURLToPath } from 'url';
 import type { BrowserWindow } from 'electron';
 import { RingBuffer } from '../remote/ring-buffer.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 interface PtySession {
   proc: pty.IPty;
@@ -164,7 +168,7 @@ export function spawnAgent(
   // Derive a predictable, unique container name from the agentId so we can
   // reliably stop it later without having to parse docker inspect output.
   const containerName = args.dockerMode
-    ? `parallel-code-${args.agentId.slice(0, 8)}`
+    ? `parallel-code-${args.agentId.slice(0, 12)}`
     : null;
 
   if (args.dockerMode) {
@@ -189,6 +193,9 @@ export function spawnAgent(
       '8g',
       '--pids-limit',
       '512',
+      // Run as host user so container files are owned by the host user
+      '--user',
+      `${process.getuid?.() ?? 1000}:${process.getgid?.() ?? 1000}`,
       // Mount the project directory as the only writable volume
       '-v',
       `${cwd}:${cwd}`,
@@ -368,7 +375,14 @@ export function killAllAgents(): void {
     if (session.flushTimer) clearTimeout(session.flushTimer);
     session.subscribers.clear();
     if (session.containerName) {
-      stopDockerContainer(session.containerName);
+      // Use synchronous docker kill with a short timeout so containers are
+      // terminated before the Electron process exits. Errors are ignored
+      // (container may already be gone).
+      try {
+        execFileSync('docker', ['kill', session.containerName], { timeout: 3000, stdio: 'pipe' });
+      } catch {
+        // Intentionally ignore: container may not exist or may have already stopped.
+      }
     }
     session.proc.kill();
   }
@@ -456,6 +470,10 @@ const DOCKER_ENV_BLOCK_LIST = new Set([
   'CLAUDECODE',
   'CLAUDE_CODE_SESSION',
   'CLAUDE_CODE_ENTRYPOINT',
+  // SSH / GPG / k8s — agent sockets and credentials must not leak into container
+  'SSH_AUTH_SOCK',
+  'GPG_AGENT_INFO',
+  'KUBECONFIG',
 ]);
 
 /** Returns true for env var names that should be blocked from Docker forwarding. */
@@ -465,6 +483,8 @@ function isBlockedDockerEnvKey(key: string): boolean {
   if (key.startsWith('XDG_')) return true;
   // Block all ELECTRON_* vars not explicitly listed above
   if (key.startsWith('ELECTRON_')) return true;
+  // Block all SUDO_* vars (e.g. SUDO_USER, SUDO_UID) — host privilege context
+  if (key.startsWith('SUDO_')) return true;
   return false;
 }
 
@@ -542,7 +562,7 @@ export async function isDockerAvailable(): Promise<boolean> {
 export const DOCKER_DEFAULT_IMAGE = 'parallel-code-agent:latest';
 
 /** Check if a Docker image exists locally. */
-export async function isDockerImageExists(image: string): Promise<boolean> {
+export async function dockerImageExists(image: string): Promise<boolean> {
   try {
     execFileSync('docker', ['image', 'inspect', image], {
       encoding: 'utf8',
@@ -555,16 +575,28 @@ export async function isDockerImageExists(image: string): Promise<boolean> {
   }
 }
 
+/** Deduplicates concurrent calls to buildDockerImage. Null when no build is in progress. */
+let activeBuild: Promise<{ ok: boolean; error?: string }> | null = null;
+
 /**
  * Build the bundled Dockerfile into parallel-code-agent:latest.
  * Streams build output to the renderer via an IPC channel so the user can see progress.
  * Returns a promise that resolves on success, rejects on failure.
+ * Concurrent calls return the same in-flight promise.
  */
 export function buildDockerImage(
   win: BrowserWindow,
   onOutputChannel: string,
 ): Promise<{ ok: boolean; error?: string }> {
-  return new Promise((resolve) => {
+  if (activeBuild !== null) {
+    return activeBuild;
+  }
+
+  activeBuild = new Promise((resolve) => {
+    const finish = (result: { ok: boolean; error?: string }) => {
+      activeBuild = null;
+      resolve(result);
+    };
     // Locate the Dockerfile bundled with the app.
     // In dev mode it's at <repo>/docker/Dockerfile
     // In production it's in the app.asar resources directory
@@ -576,7 +608,7 @@ export function buildDockerImage(
     const dockerfilePath = path.join(dockerDir, 'Dockerfile');
 
     if (!fs.existsSync(dockerfilePath)) {
-      resolve({ ok: false, error: `Dockerfile not found at ${dockerfilePath}` });
+      finish({ ok: false, error: `Dockerfile not found at ${dockerfilePath}` });
       return;
     }
 
@@ -594,15 +626,17 @@ export function buildDockerImage(
     proc.stderr?.on('data', (chunk: Buffer) => send(chunk.toString('utf8')));
 
     proc.on('error', (err) => {
-      resolve({ ok: false, error: err.message });
+      finish({ ok: false, error: err.message });
     });
 
     proc.on('close', (code) => {
       if (code === 0) {
-        resolve({ ok: true });
+        finish({ ok: true });
       } else {
-        resolve({ ok: false, error: `docker build exited with code ${code}` });
+        finish({ ok: false, error: `docker build exited with code ${code}` });
       }
     });
   });
+
+  return activeBuild;
 }

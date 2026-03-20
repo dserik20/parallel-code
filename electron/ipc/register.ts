@@ -13,7 +13,7 @@ import {
   killAllAgents,
   getAgentMeta,
   isDockerAvailable,
-  isDockerImageExists,
+  dockerImageExists,
   buildDockerImage,
 } from './pty.js';
 import { ensurePlansDirectory, startPlanWatcher, readPlanForWorktree } from './plans.js';
@@ -130,7 +130,7 @@ export function registerAllHandlers(win: BrowserWindow): void {
   ipcMain.handle(IPC.CheckDockerAvailable, () => isDockerAvailable());
   ipcMain.handle(IPC.CheckDockerImageExists, (_e, args) => {
     assertString(args.image, 'image');
-    return isDockerImageExists(args.image);
+    return dockerImageExists(args.image);
   });
   ipcMain.handle(IPC.BuildDockerImage, (_e, args) => {
     assertString(args.onOutputChannel, 'onOutputChannel');
