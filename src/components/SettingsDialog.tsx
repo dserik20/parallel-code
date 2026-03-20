@@ -301,7 +301,7 @@ export function SettingsDialog(props: SettingsDialogProps) {
                 type="text"
                 value={store.dockerImage}
                 onInput={(e) => setDockerImage(e.currentTarget.value)}
-                placeholder="ubuntu:latest"
+                placeholder="parallel-code-agent:latest"
                 style={{
                   flex: '1',
                   background: theme.taskPanelBg,

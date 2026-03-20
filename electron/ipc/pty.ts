@@ -551,12 +551,11 @@ function stopDockerContainer(name: string): void {
 
 /** Check if Docker is available on the system. */
 export async function isDockerAvailable(): Promise<boolean> {
-  try {
-    execFileSync('docker', ['info'], { encoding: 'utf8', timeout: 5000, stdio: 'pipe' });
-    return true;
-  } catch {
-    return false;
-  }
+  return new Promise((resolve) => {
+    execFile('docker', ['info'], { encoding: 'utf8', timeout: 5000 }, (err) => {
+      resolve(!err);
+    });
+  });
 }
 
 /** The default image name for Docker-isolated tasks. */
@@ -564,16 +563,11 @@ export const DOCKER_DEFAULT_IMAGE = 'parallel-code-agent:latest';
 
 /** Check if a Docker image exists locally. */
 export async function dockerImageExists(image: string): Promise<boolean> {
-  try {
-    execFileSync('docker', ['image', 'inspect', image], {
-      encoding: 'utf8',
-      timeout: 5000,
-      stdio: 'pipe',
+  return new Promise((resolve) => {
+    execFile('docker', ['image', 'inspect', image], { encoding: 'utf8', timeout: 5000 }, (err) => {
+      resolve(!err);
     });
-    return true;
-  } catch {
-    return false;
-  }
+  });
 }
 
 /** Deduplicates concurrent calls to buildDockerImage. Null when no build is in progress. */

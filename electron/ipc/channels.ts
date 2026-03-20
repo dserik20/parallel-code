@@ -81,6 +81,7 @@ export enum IPC {
   // Plan
   PlanContent = 'plan_content',
   ReadPlanContent = 'read_plan_content',
+  StopPlanWatcher = 'stop_plan_watcher',
 
   // Ask about code
   AskAboutCode = 'ask_about_code',

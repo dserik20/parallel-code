@@ -222,6 +222,9 @@ export async function closeTask(taskId: string): Promise<void> {
   setStore('tasks', taskId, 'closingStatus', 'closing');
   setStore('tasks', taskId, 'closingError', undefined);
 
+  // Stop plan file watcher to prevent FSWatcher leak
+  invoke(IPC.StopPlanWatcher, { taskId }).catch(console.error);
+
   try {
     // Kill agents
     for (const agentId of agentIds) {
@@ -484,6 +487,9 @@ export function hasDirectModeTask(projectId: string): boolean {
 export async function collapseTask(taskId: string): Promise<void> {
   const task = store.tasks[taskId];
   if (!task || task.collapsed || task.closingStatus) return;
+
+  // Stop plan file watcher to prevent FSWatcher leak
+  invoke(IPC.StopPlanWatcher, { taskId }).catch(console.error);
 
   // Save agent def before killing so uncollapse can restart cleanly.
   // Collapsing unmounts the TaskPanel which destroys the TerminalView,
