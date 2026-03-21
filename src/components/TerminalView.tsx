@@ -148,7 +148,7 @@ export function TerminalView(props: TerminalViewProps) {
     });
 
     fitAddon.fit();
-    registerTerminal(agentId, containerRef, fitAddon, term);
+    registerTerminal(agentId, containerRef, fitAddon);
 
     if (props.autoFocus) {
       term.focus();
@@ -446,12 +446,7 @@ export function TerminalView(props: TerminalViewProps) {
         height: '100%',
         overflow: 'hidden',
         padding: '4px 0 0 4px',
-        // WORKAROUND: Use 'layout paint style' instead of 'strict' to avoid
-        // xterm.js v6 scroll position resets — 'strict' includes 'size'
-        // containment which can cause stale dimension reads during
-        // Viewport._sync(). TODO: Try reverting to 'strict' after upgrading
-        // xterm.js past v6.0.0 (xtermjs/xterm.js#5096).
-        contain: 'layout paint style',
+        contain: 'strict',
       }}
     />
   );
