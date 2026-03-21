@@ -42,7 +42,23 @@ function flush() {
   for (const [, entry] of entries) {
     if (!entry.dirty) continue;
     entry.dirty = false;
+
+    // WORKAROUND: xterm.js v6.0.0 scroll regression (xtermjs/xterm.js#5096)
+    // The v6 viewport rewrite (SmoothScrollableElement) can reset scrollTop
+    // to 0 when fit() → resize() → Viewport._sync() encounters a transient
+    // dimension mismatch. Save scroll position and restore if clobbered.
+    // TODO: Remove once we upgrade to an xterm.js version that fixes this
+    // (scroll fixes are on master but not yet in a stable release).
+    const buf = entry.term.buffer.active;
+    const wasScrolledUp = buf.viewportY < buf.baseY;
+    const savedViewportY = buf.viewportY;
+
     entry.fitAddon.fit();
+
+    if (wasScrolledUp && buf.viewportY !== savedViewportY) {
+      entry.term.scrollToLine(Math.min(savedViewportY, buf.baseY));
+    }
+
     didWork = true;
   }
   // Only update throttle timestamp when we actually fitted something —

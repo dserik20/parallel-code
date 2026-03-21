@@ -62,7 +62,7 @@ export function TilingLayout() {
                     ? 'task-removing'
                     : 'task-appearing'
                 }
-                style={{ height: '100%', padding: '6px 3px' }}
+                style={{ height: '100%', padding: '6px 3px', 'box-sizing': 'border-box' }}
                 onAnimationEnd={(e) => {
                   if (e.animationName === 'taskAppear')
                     e.currentTarget.classList.remove('task-appearing');
