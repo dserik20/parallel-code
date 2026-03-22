@@ -49,6 +49,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Make fd and fdfind available as 'fd'
 RUN ln -sf "$(command -v fdfind)" /usr/local/bin/fd 2>/dev/null || true
 
+# AI agent CLIs — must be present so Docker-mode tasks can execute them
+RUN npm install -g @anthropic-ai/claude-code @openai/codex @google/gemini-cli opencode-ai
+
 # Default git config so commits work out of the box inside containers
 RUN git config --system init.defaultBranch main \
     && git config --system advice.detachedHead false
