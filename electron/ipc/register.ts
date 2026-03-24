@@ -44,6 +44,7 @@ import {
   createWorktree,
   removeWorktree,
   isGitRepo,
+  getBranches,
 } from './git.js';
 import { createTask, deleteTask } from './tasks.js';
 import { listAgents } from './agents.js';
@@ -188,11 +189,15 @@ export function registerAllHandlers(win: BrowserWindow): void {
     validatePath(args.projectRoot, 'projectRoot');
     assertStringArray(args.symlinkDirs, 'symlinkDirs');
     assertOptionalString(args.branchPrefix, 'branchPrefix');
+    assertOptionalString(args.baseBranch, 'baseBranch');
+    const baseBranch = args.baseBranch || undefined;
+    if (baseBranch) validateBranchName(baseBranch, 'baseBranch');
     const result = createTask(
       args.name,
       args.projectRoot,
       args.symlinkDirs,
       args.branchPrefix ?? 'task',
+      baseBranch,
     );
     result.then((r: { id: string }) => taskNames.set(r.id, args.name)).catch(() => {});
     return result;
@@ -215,32 +220,44 @@ export function registerAllHandlers(win: BrowserWindow): void {
   // --- Git commands ---
   ipcMain.handle(IPC.GetChangedFiles, (_e, args) => {
     validatePath(args.worktreePath, 'worktreePath');
-    return getChangedFiles(args.worktreePath);
+    const baseBranch = args.baseBranch || undefined;
+    if (baseBranch) validateBranchName(baseBranch, 'baseBranch');
+    return getChangedFiles(args.worktreePath, baseBranch);
   });
   ipcMain.handle(IPC.GetChangedFilesFromBranch, (_e, args) => {
     validatePath(args.projectRoot, 'projectRoot');
     validateBranchName(args.branchName, 'branchName');
-    return getChangedFilesFromBranch(args.projectRoot, args.branchName);
+    const baseBranch = args.baseBranch || undefined;
+    if (baseBranch) validateBranchName(baseBranch, 'baseBranch');
+    return getChangedFilesFromBranch(args.projectRoot, args.branchName, baseBranch);
   });
   ipcMain.handle(IPC.GetAllFileDiffs, (_e, args) => {
     validatePath(args.worktreePath, 'worktreePath');
-    return getAllFileDiffs(args.worktreePath);
+    const baseBranch = args.baseBranch || undefined;
+    if (baseBranch) validateBranchName(baseBranch, 'baseBranch');
+    return getAllFileDiffs(args.worktreePath, baseBranch);
   });
   ipcMain.handle(IPC.GetAllFileDiffsFromBranch, (_e, args) => {
     validatePath(args.projectRoot, 'projectRoot');
     validateBranchName(args.branchName, 'branchName');
-    return getAllFileDiffsFromBranch(args.projectRoot, args.branchName);
+    const baseBranch = args.baseBranch || undefined;
+    if (baseBranch) validateBranchName(baseBranch, 'baseBranch');
+    return getAllFileDiffsFromBranch(args.projectRoot, args.branchName, baseBranch);
   });
   ipcMain.handle(IPC.GetFileDiff, (_e, args) => {
     validatePath(args.worktreePath, 'worktreePath');
     validateRelativePath(args.filePath, 'filePath');
-    return getFileDiff(args.worktreePath, args.filePath);
+    const baseBranch = args.baseBranch || undefined;
+    if (baseBranch) validateBranchName(baseBranch, 'baseBranch');
+    return getFileDiff(args.worktreePath, args.filePath, baseBranch);
   });
   ipcMain.handle(IPC.GetFileDiffFromBranch, (_e, args) => {
     validatePath(args.projectRoot, 'projectRoot');
     validateBranchName(args.branchName, 'branchName');
     validateRelativePath(args.filePath, 'filePath');
-    return getFileDiffFromBranch(args.projectRoot, args.branchName, args.filePath);
+    const baseBranch = args.baseBranch || undefined;
+    if (baseBranch) validateBranchName(baseBranch, 'baseBranch');
+    return getFileDiffFromBranch(args.projectRoot, args.branchName, args.filePath, baseBranch);
   });
   ipcMain.handle(IPC.GetGitignoredDirs, (_e, args) => {
     validatePath(args.projectRoot, 'projectRoot');
@@ -248,7 +265,9 @@ export function registerAllHandlers(win: BrowserWindow): void {
   });
   ipcMain.handle(IPC.GetWorktreeStatus, (_e, args) => {
     validatePath(args.worktreePath, 'worktreePath');
-    return getWorktreeStatus(args.worktreePath);
+    const baseBranch = args.baseBranch || undefined;
+    if (baseBranch) validateBranchName(baseBranch, 'baseBranch');
+    return getWorktreeStatus(args.worktreePath, baseBranch);
   });
   ipcMain.handle(IPC.CommitAll, (_e, args) => {
     validatePath(args.worktreePath, 'worktreePath');
@@ -261,7 +280,9 @@ export function registerAllHandlers(win: BrowserWindow): void {
   });
   ipcMain.handle(IPC.CheckMergeStatus, (_e, args) => {
     validatePath(args.worktreePath, 'worktreePath');
-    return checkMergeStatus(args.worktreePath);
+    const baseBranch = args.baseBranch || undefined;
+    if (baseBranch) validateBranchName(baseBranch, 'baseBranch');
+    return checkMergeStatus(args.worktreePath, baseBranch);
   });
   ipcMain.handle(IPC.MergeTask, (_e, args) => {
     validatePath(args.projectRoot, 'projectRoot');
@@ -269,17 +290,22 @@ export function registerAllHandlers(win: BrowserWindow): void {
     assertBoolean(args.squash, 'squash');
     assertOptionalString(args.message, 'message');
     assertOptionalBoolean(args.cleanup, 'cleanup');
+    const baseBranch = args.baseBranch || undefined;
+    if (baseBranch) validateBranchName(baseBranch, 'baseBranch');
     return mergeTask(
       args.projectRoot,
       args.branchName,
       args.squash,
       args.message ?? null,
       args.cleanup ?? false,
+      baseBranch,
     );
   });
   ipcMain.handle(IPC.GetBranchLog, (_e, args) => {
     validatePath(args.worktreePath, 'worktreePath');
-    return getBranchLog(args.worktreePath);
+    const baseBranch = args.baseBranch || undefined;
+    if (baseBranch) validateBranchName(baseBranch, 'baseBranch');
+    return getBranchLog(args.worktreePath, baseBranch);
   });
   ipcMain.handle(IPC.PushTask, (_e, args) => {
     validatePath(args.projectRoot, 'projectRoot');
@@ -289,7 +315,9 @@ export function registerAllHandlers(win: BrowserWindow): void {
   });
   ipcMain.handle(IPC.RebaseTask, (_e, args) => {
     validatePath(args.worktreePath, 'worktreePath');
-    return rebaseTask(args.worktreePath);
+    const baseBranch = args.baseBranch || undefined;
+    if (baseBranch) validateBranchName(baseBranch, 'baseBranch');
+    return rebaseTask(args.worktreePath, baseBranch);
   });
   ipcMain.handle(IPC.GetMainBranch, (_e, args) => {
     validatePath(args.projectRoot, 'projectRoot');
@@ -302,6 +330,10 @@ export function registerAllHandlers(win: BrowserWindow): void {
   ipcMain.handle(IPC.CheckIsGitRepo, (_e, args) => {
     validatePath(args.path, 'path');
     return isGitRepo(args.path);
+  });
+  ipcMain.handle(IPC.GetBranches, (_e, args) => {
+    validatePath(args.projectRoot, 'projectRoot');
+    return getBranches(args.projectRoot);
   });
 
   // --- Persistence ---
@@ -361,7 +393,13 @@ export function registerAllHandlers(win: BrowserWindow): void {
   ipcMain.handle(IPC.CreateArenaWorktree, (_e, args) => {
     validatePath(args.projectRoot, 'projectRoot');
     validateBranchName(args.branchName, 'branchName');
-    return createWorktree(args.projectRoot, args.branchName, args.symlinkDirs ?? [], true);
+    return createWorktree(
+      args.projectRoot,
+      args.branchName,
+      args.symlinkDirs ?? [],
+      undefined,
+      true,
+    );
   });
 
   ipcMain.handle(IPC.RemoveArenaWorktree, (_e, args) => {

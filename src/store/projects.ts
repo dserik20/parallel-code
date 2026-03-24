@@ -62,7 +62,8 @@ export function updateProject(
       | 'color'
       | 'branchPrefix'
       | 'deleteBranchOnClose'
-      | 'defaultDirectMode'
+      | 'defaultGitIsolation'
+      | 'defaultBaseBranch'
       | 'terminalBookmarks'
     >
   >,
@@ -77,8 +78,10 @@ export function updateProject(
         s.projects[idx].branchPrefix = sanitizeBranchPrefix(updates.branchPrefix);
       if (updates.deleteBranchOnClose !== undefined)
         s.projects[idx].deleteBranchOnClose = updates.deleteBranchOnClose;
-      if (updates.defaultDirectMode !== undefined)
-        s.projects[idx].defaultDirectMode = updates.defaultDirectMode;
+      if (updates.defaultGitIsolation !== undefined)
+        s.projects[idx].defaultGitIsolation = updates.defaultGitIsolation;
+      if (updates.defaultBaseBranch !== undefined)
+        s.projects[idx].defaultBaseBranch = updates.defaultBaseBranch;
       if (updates.terminalBookmarks !== undefined)
         s.projects[idx].terminalBookmarks = updates.terminalBookmarks;
     }),
