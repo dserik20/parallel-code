@@ -252,7 +252,7 @@ export function ChangedFilesList(props: ChangedFilesListProps) {
         >
           {files().length} files, <span style={{ color: theme.success }}>+{totalAdded()}</span>{' '}
           <span style={{ color: theme.error }}>-{totalRemoved()}</span>
-          <Show when={uncommittedCount() > 0 && uncommittedCount() < files().length}>
+          <Show when={uncommittedCount() > 0}>
             {' '}
             <span style={{ color: theme.warning }}>({uncommittedCount()} uncommitted)</span>
           </Show>
