@@ -171,7 +171,11 @@ export function TerminalView(props: TerminalViewProps) {
     });
 
     term.attachCustomKeyEventHandler((e: KeyboardEvent) => {
-      if (e.type !== 'keydown') return true;
+      if (e.type !== 'keydown') {
+        // Suppress Shift+Enter keyup so xterm doesn't echo a bare Enter
+        if (e.key === 'Enter' && e.shiftKey) return false;
+        return true;
+      }
 
       // Let global app shortcuts pass through to the window handler
       if (matchesGlobalShortcut(e)) return false;
@@ -195,6 +199,27 @@ export function TerminalView(props: TerminalViewProps) {
           if (text) enqueueInput(text);
         });
         return false;
+      }
+
+      // Shift+Enter → send as Alt+Enter (newline in CLI agents like Claude Code)
+      if (e.key === 'Enter' && e.shiftKey && !e.metaKey && !e.ctrlKey && !e.altKey) {
+        e.preventDefault();
+        enqueueInput('\x1b\r');
+        return false;
+      }
+
+      // Cmd+Left/Right → Home/End (macOS only; on Linux Ctrl+Arrow is word-jump)
+      if (isMac && e.metaKey && !e.altKey && !e.ctrlKey && !e.shiftKey) {
+        if (e.key === 'ArrowLeft') {
+          e.preventDefault();
+          enqueueInput('\x1b[H'); // Home
+          return false;
+        }
+        if (e.key === 'ArrowRight') {
+          e.preventDefault();
+          enqueueInput('\x1b[F'); // End
+          return false;
+        }
       }
 
       return true;
