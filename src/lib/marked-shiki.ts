@@ -1,3 +1,4 @@
+import DOMPurify from 'dompurify';
 import { Marked, type Tokens } from 'marked';
 import { createSignal, createEffect } from 'solid-js';
 import { highlightLines } from './shiki-highlighter';
@@ -38,7 +39,8 @@ export async function renderMarkdownWithHighlighting(markdown: string): Promise<
   };
 
   marked.use({ renderer });
-  return marked.parser(tokens);
+  const raw = marked.parser(tokens);
+  return DOMPurify.sanitize(raw, { ADD_ATTR: ['data-lang'] });
 }
 
 interface TokenLike {
@@ -106,7 +108,11 @@ export function createHighlightedMarkdown(source: () => string | undefined): () 
       })
       .catch(() => {
         if (thisGen === generation) {
-          setHtml(new Marked().parse(content, { async: false }) as string);
+          setHtml(
+            DOMPurify.sanitize(new Marked().parse(content, { async: false }) as string, {
+              ADD_ATTR: ['data-lang'],
+            }),
+          );
         }
       });
   });

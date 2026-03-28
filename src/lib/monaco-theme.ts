@@ -10,8 +10,18 @@ interface PresetColors {
   accent: string;
 }
 
-// Colors must match the CSS variables in src/styles.css for each look preset.
+// Colors are generally derived from the CSS variables in src/styles.css for each look preset,
+// but may intentionally diverge (e.g. midnight uses #000 editor background for OLED).
 // Diff highlight colors use the GitHub Dark palette (shared across all presets).
+const graphiteColors: PresetColors = {
+  bgElevated: '#1c2630',
+  fg: '#d7e4f0',
+  fgMuted: '#9bb0c3',
+  fgSubtle: '#678197',
+  border: '#2e3e50',
+  accent: '#2ec8ff',
+};
+
 const presetColors: Record<LookPreset, PresetColors> = {
   classic: {
     bgElevated: '#2d2e32',
@@ -21,21 +31,10 @@ const presetColors: Record<LookPreset, PresetColors> = {
     border: '#393b3f',
     accent: '#4c6fff',
   },
-  graphite: {
-    bgElevated: '#1c2630',
-    fg: '#d7e4f0',
-    fgMuted: '#9bb0c3',
-    fgSubtle: '#678197',
-    border: '#2e3e50',
-    accent: '#2ec8ff',
-  },
+  graphite: graphiteColors,
   midnight: {
+    ...graphiteColors,
     bgElevated: '#000000',
-    fg: '#d7e4f0',
-    fgMuted: '#9bb0c3',
-    fgSubtle: '#678197',
-    border: '#2e3e50',
-    accent: '#2ec8ff',
   },
   indigo: {
     bgElevated: '#1c2038',

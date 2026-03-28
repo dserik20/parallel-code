@@ -191,7 +191,7 @@ export async function closeTask(taskId: string): Promise<void> {
       await invoke(IPC.KillAgent, { agentId: shellId }).catch(console.error);
     }
 
-    // Skip git cleanup for direct mode (no worktree/branch to remove)
+    // Skip git cleanup for "Current Branch" mode (no worktree/branch to remove)
     if (task.gitIsolation === 'worktree') {
       // Remove worktree + branch
       await invoke(IPC.DeleteTask, {
@@ -226,7 +226,7 @@ function removeTaskFromStore(taskId: string, agentIds: string[]): void {
 
   // Stop the plan file watcher (fs.FSWatcher + poll interval) on the backend.
   // This is the single convergence point for all task removal paths (close,
-  // merge+cleanup, direct-mode close), so placing it here prevents leaks
+  // merge+cleanup, current-branch-mode close), so placing it here prevents leaks
   // regardless of which path removed the task.  Idempotent if already stopped.
   invoke(IPC.StopPlanWatcher, { taskId }).catch(console.error);
 

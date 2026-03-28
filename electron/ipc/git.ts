@@ -224,7 +224,7 @@ async function detectMergeBase(
 ): Promise<string> {
   const branch = baseBranch ?? (await detectMainBranch(repoRoot));
   const headRef = head ?? 'HEAD';
-  const key = `${cacheKey(repoRoot)}:${branch}`;
+  const key = `${cacheKey(repoRoot)}:${branch}:${headRef}`;
   const cached = mergeBaseCache.get(key);
   if (cached) {
     if (cached.expiresAt > Date.now()) return cached.value;

@@ -54,7 +54,9 @@ function buildGrid(panelId: string): string[][] {
       grid.push(task.shellAgentIds.map((_, i) => `shell:${i}`));
     }
     grid.push(['ai-terminal']);
-    grid.push(['prompt']);
+    if (store.showPromptInput) {
+      grid.push(['prompt']);
+    }
     return grid;
   }
 

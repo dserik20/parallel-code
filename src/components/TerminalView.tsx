@@ -117,7 +117,7 @@ export function TerminalView(props: TerminalViewProps) {
         // Match file paths: absolute, ./ or ../ relative, and bare relative with /
         // Supports @scoped packages, line:col suffixes like foo.ts:42:10
         const regex =
-          /(?:~?\/[\w@./-]+|\.{1,2}\/[\w@./-]+|[\w@][\w@./-]*\/[\w@./-]+)(?::\d+(?::\d+)?)?/g;
+          /(?:\/[\w@./-]+|\.{1,2}\/[\w@./-]+|[\w@][\w@./-]*\/[\w@./-]+)(?::\d+(?::\d+)?)?/g;
         const links: { startIndex: number; length: number; text: string }[] = [];
         let match: RegExpExecArray | null;
         while ((match = regex.exec(line)) !== null) {
@@ -145,7 +145,7 @@ export function TerminalView(props: TerminalViewProps) {
               // Resolve relative paths against the task's working directory
               const resolved = filePath.startsWith('/') ? filePath : `${props.cwd}/${filePath}`;
               // Cmd+click always opens externally; otherwise use callback for .md files
-              if (!event.metaKey && resolved.endsWith('.md') && props.onFileLink) {
+              if (!event.metaKey && /\.md$/i.test(resolved) && props.onFileLink) {
                 props.onFileLink(resolved);
               } else {
                 invoke(IPC.OpenPath, { filePath: resolved }).catch(console.error);

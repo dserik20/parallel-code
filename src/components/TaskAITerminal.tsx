@@ -44,7 +44,11 @@ export function TaskAITerminal(props: TaskAITerminalProps) {
         setMdViewerFileName(filePath.split('/').pop() ?? filePath);
         setMdViewerOpen(true);
       })
-      .catch(console.error);
+      .catch((err) => {
+        setMdViewerContent(`**Error loading file:** ${String(err)}`);
+        setMdViewerFileName(filePath.split('/').pop() ?? filePath);
+        setMdViewerOpen(true);
+      });
   }
 
   const firstAgent = () => {

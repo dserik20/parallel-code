@@ -456,12 +456,24 @@ export function registerAllHandlers(win: BrowserWindow): void {
   // --- File links ---
   ipcMain.handle(IPC.OpenPath, (_e, args) => {
     validatePath(args.filePath, 'filePath');
+    // Block executable extensions to prevent accidental code execution
+    const dangerous = /\.(sh|bash|exe|bat|cmd|app|command|desktop|appimage|run)$/i;
+    if (dangerous.test(args.filePath)) {
+      throw new Error('Cannot open executable files');
+    }
     return shell.openPath(args.filePath);
   });
 
-  ipcMain.handle(IPC.ReadFileText, (_e, args) => {
+  ipcMain.handle(IPC.ReadFileText, async (_e, args) => {
     validatePath(args.filePath, 'filePath');
-    return fs.readFileSync(args.filePath, 'utf8');
+    if (!/\.md$/i.test(args.filePath)) {
+      throw new Error('Only .md files can be read');
+    }
+    const stat = await fs.promises.stat(args.filePath);
+    if (stat.size > 2 * 1024 * 1024) {
+      throw new Error('File too large to preview (max 2 MB)');
+    }
+    return fs.promises.readFile(args.filePath, 'utf8');
   });
 
   // --- Clipboard ---

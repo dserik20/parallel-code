@@ -706,7 +706,7 @@ export function Sidebar() {
   );
 }
 
-function DirectModeBadge(props: { branchName: string }) {
+function CurrentBranchBadge(props: { branchName: string }) {
   return (
     <span
       style={{
@@ -766,7 +766,7 @@ function CollapsedTaskRow(props: { taskId: string }) {
         >
           <StatusDot status={getTaskDotStatus(props.taskId)} size="sm" />
           <Show when={t().gitIsolation === 'direct'}>
-            <DirectModeBadge branchName={t().branchName} />
+            <CurrentBranchBadge branchName={t().branchName} />
           </Show>
           <span style={{ overflow: 'hidden', 'text-overflow': 'ellipsis' }}>{t().name}</span>
         </div>
