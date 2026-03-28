@@ -91,7 +91,9 @@ export function TerminalView(props: TerminalViewProps) {
     fitAddon = new FitAddon();
     term.loadAddon(fitAddon);
     term.loadAddon(
-      new WebLinksAddon((_event, uri) => {
+      new WebLinksAddon((event, uri) => {
+        // Require Cmd+click (Mac) or Ctrl+click (Linux) to open links
+        if (!(isMac ? event.metaKey : event.ctrlKey)) return;
         try {
           const parsed = new URL(uri);
           if (parsed.protocol === 'http:' || parsed.protocol === 'https:') {
@@ -140,6 +142,9 @@ export function TerminalView(props: TerminalViewProps) {
             },
             text: link.text,
             activate(event: MouseEvent, _text: string) {
+              // Require Cmd+click (Mac) or Ctrl+click (Linux) to open links
+              const modifierHeld = isMac ? event.metaKey : event.ctrlKey;
+              if (!modifierHeld) return;
               // Strip line:col suffix for opening
               const filePath = link.text.replace(/:\d+(:\d+)?$/, '');
               // Resolve relative paths against the task's working directory
