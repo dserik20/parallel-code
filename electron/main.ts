@@ -142,7 +142,7 @@ app.whenReady().then(() => {
   // Grant microphone and clipboard access (deny camera/video)
   session.defaultSession.setPermissionRequestHandler(
     (_webContents, permission, callback, details) => {
-      if (permission === 'clipboard-read') {
+      if (permission === 'clipboard-read' || permission === 'clipboard-sanitized-write') {
         return callback(true);
       }
       if (permission === 'media') {
