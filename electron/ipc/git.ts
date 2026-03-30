@@ -238,19 +238,6 @@ async function detectMergeBase(
 }
 
 /**
- * Resolve the main branch to whichever ref is most up-to-date (prefers
- * origin/<branch> over local <branch>). Used to compare the branch HEAD
- * against the current state of main, not just the merge-base.
- */
-async function resolveMainTipRef(repoRoot: string, baseBranch?: string): Promise<string> {
-  const branch = baseBranch ?? (await detectMainBranch(repoRoot));
-  if (!branch.includes('/') && (await remoteTrackingRefExists(repoRoot, branch))) {
-    return `origin/${branch}`;
-  }
-  return branch;
-}
-
-/**
  * Get the set of file paths that actually differ between two refs.
  * Used to filter merge-base diffs: excludes files where the branch's changes
  * have already been merged/cherry-picked into main.
@@ -273,6 +260,43 @@ async function filesDifferingBetween(
   } catch {
     return null; // could not resolve — skip filtering
   }
+}
+
+/**
+ * Get the set of files that genuinely differ between a branch head and main,
+ * checking against both the local main branch and origin/<main> (if it exists).
+ * A file is filtered out if it's identical to *either* ref — meaning its
+ * changes have already been merged/cherry-picked into at least one of them.
+ * Returns null if unable to determine (skip filtering).
+ */
+async function filesDifferingFromMain(
+  repoRoot: string,
+  headRef: string,
+  baseBranch?: string,
+): Promise<Set<string> | null> {
+  const branch = baseBranch ?? (await detectMainBranch(repoRoot));
+
+  const refs: string[] = [branch];
+  if (!branch.includes('/') && (await remoteTrackingRefExists(repoRoot, branch))) {
+    refs.push(`origin/${branch}`);
+  }
+
+  const results = await Promise.all(
+    refs.map((ref) => filesDifferingBetween(repoRoot, ref, headRef)),
+  );
+
+  const validSets = results.filter((s): s is Set<string> => s !== null);
+  if (validSets.length === 0) return null;
+  if (validSets.length === 1) return validSets[0];
+
+  // Intersection: keep only files that differ from ALL main refs.
+  // If a file is identical to any main ref, its changes are already there.
+  const [first, ...rest] = validSets;
+  const intersection = new Set<string>();
+  for (const p of first) {
+    if (rest.every((s) => s.has(p))) intersection.add(p);
+  }
+  return intersection;
 }
 
 async function pinHead(worktreePath: string): Promise<string> {
@@ -599,8 +623,7 @@ export async function getChangedFiles(
   // Filter out committed files whose content is already identical on the main
   // branch tip (e.g. merged or cherry-picked). Only files that still differ
   // from main should appear in the changed files list.
-  const mainTip = await resolveMainTipRef(worktreePath, baseBranch);
-  const tipDiffFiles = await filesDifferingBetween(worktreePath, mainTip, headHash);
+  const tipDiffFiles = await filesDifferingFromMain(worktreePath, headHash, baseBranch);
   if (tipDiffFiles) {
     for (const p of [...committedNumstatMap.keys()]) {
       if (!tipDiffFiles.has(p)) committedNumstatMap.delete(p);
@@ -718,8 +741,7 @@ export async function getAllFileDiffs(worktreePath: string, baseBranch?: string)
 
   // Filter out file diffs already identical on the main branch tip.
   if (combinedDiff) {
-    const mainTip = await resolveMainTipRef(worktreePath, baseBranch);
-    const tipDiffFiles = await filesDifferingBetween(worktreePath, mainTip);
+    const tipDiffFiles = await filesDifferingFromMain(worktreePath, headHash, baseBranch);
     if (tipDiffFiles) {
       combinedDiff = combinedDiff
         .split(/^(?=diff --git )/m)
@@ -790,8 +812,7 @@ export async function getAllFileDiffsFromBranch(
     });
 
     // Filter out file diffs already identical on the main branch tip.
-    const mainTip = await resolveMainTipRef(projectRoot, baseBranch);
-    const tipDiffFiles = await filesDifferingBetween(projectRoot, mainTip, branchName);
+    const tipDiffFiles = await filesDifferingFromMain(projectRoot, branchName, baseBranch);
     if (tipDiffFiles) {
       return stdout
         .split(/^(?=diff --git )/m)
@@ -1155,8 +1176,7 @@ export async function getChangedFilesFromBranch(
   const { statusMap, numstatMap } = parseDiffRawNumstat(diffStr);
 
   // Filter out files already identical on the main branch tip.
-  const mainTip = await resolveMainTipRef(projectRoot, baseBranch);
-  const tipDiffFiles = await filesDifferingBetween(projectRoot, mainTip, branchName);
+  const tipDiffFiles = await filesDifferingFromMain(projectRoot, branchName, baseBranch);
   if (tipDiffFiles) {
     for (const p of [...numstatMap.keys()]) {
       if (!tipDiffFiles.has(p)) numstatMap.delete(p);

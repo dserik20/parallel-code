@@ -438,6 +438,87 @@ describe('getChangedFiles (worktree-based, merge-base diff)', () => {
       expect(paths).not.toContain('already-on-main.ts');
     });
 
+    it('should filter files merged into local main even when origin/main is stale', async () => {
+      const worktree = uniqueWorktreePath();
+      const calls: string[][] = [];
+
+      // Custom handler: origin/main exists but is stale (still shows the file
+      // as differing), while local main is up-to-date (file is identical).
+      const handler: MockHandler = (args, cb) => {
+        const cmd = args[0];
+
+        if (cmd === 'rev-parse' && args[1] === 'HEAD') {
+          cb(null, HEAD_HASH + '\n', '');
+          return;
+        }
+        if (cmd === 'rev-parse' && args.includes('--git-common-dir')) {
+          cb(null, '.git\n', '');
+          return;
+        }
+        // origin/main exists
+        if (cmd === 'rev-parse' && args[1] === '--verify' && args[2]?.startsWith('refs/remotes/')) {
+          cb(null, 'some-hash\n', '');
+          return;
+        }
+        if (cmd === 'symbolic-ref') {
+          cb(new Error('no remote'), '', '');
+          return;
+        }
+        if (cmd === 'merge-base') {
+          cb(null, MERGE_BASE + '\n', '');
+          return;
+        }
+
+        // diff --name-only — respond differently for local vs origin
+        if (cmd === 'diff' && args.includes('--name-only')) {
+          const ref = args[2]; // ['diff', '--name-only', ref, headRef]
+          if (ref === 'main') {
+            // Local main is up-to-date: only branch-only.ts differs
+            cb(null, 'branch-only.ts\n', '');
+          } else if (ref.startsWith('origin/')) {
+            // origin/main is stale: both files still differ
+            cb(null, 'branch-only.ts\nalready-on-main.ts\n', '');
+          } else {
+            cb(new Error('unexpected ref'), '', '');
+          }
+          return;
+        }
+
+        // committed raw numstat
+        if (cmd === 'diff' && args.includes('--raw') && args.includes(MERGE_BASE)) {
+          cb(
+            null,
+            [
+              rawNumstatEntry('branch-only.ts', 10, 2),
+              rawNumstatEntry('already-on-main.ts', 5, 1),
+            ].join(''),
+            '',
+          );
+          return;
+        }
+
+        // uncommitted / untracked
+        if (cmd === 'diff' && args.includes('--raw') && args.includes(HEAD_HASH)) {
+          cb(null, '', '');
+          return;
+        }
+        if (cmd === 'ls-files') {
+          cb(null, '', '');
+          return;
+        }
+
+        cb(null, '', '');
+      };
+
+      setupMock(calls, handler);
+
+      const files = await getChangedFiles(worktree, 'main');
+      const paths = files.map((f) => f.path);
+
+      expect(paths).toContain('branch-only.ts');
+      expect(paths).not.toContain('already-on-main.ts');
+    });
+
     it('should diff against merge-base, not branch tip', async () => {
       const calls: string[][] = [];
       setupMock(
