@@ -47,6 +47,7 @@ export async function saveState(): Promise<void> {
     mergedLinesAdded: store.mergedLinesAdded,
     mergedLinesRemoved: store.mergedLinesRemoved,
     terminalFont: store.terminalFont,
+    terminalFontSize: store.terminalFontSize !== 13 ? store.terminalFontSize : undefined,
     themePreset: store.themePreset,
     showPromptInput: store.showPromptInput,
     fontSmoothing: store.fontSmoothing,
@@ -188,6 +189,7 @@ interface LegacyPersistedState {
   mergedLinesAdded?: unknown;
   mergedLinesRemoved?: unknown;
   terminalFont?: unknown;
+  terminalFontSize?: unknown;
   themePreset?: unknown;
   showPromptInput?: unknown;
   fontSmoothing?: unknown;
@@ -300,6 +302,14 @@ export async function loadState(): Promise<void> {
         typeof raw.terminalFont === 'string' && raw.terminalFont.trim()
           ? raw.terminalFont
           : DEFAULT_TERMINAL_FONT;
+      const rawFontSize = raw.terminalFontSize;
+      s.terminalFontSize =
+        typeof rawFontSize === 'number' &&
+        Number.isFinite(rawFontSize) &&
+        rawFontSize >= 10 &&
+        rawFontSize <= 20
+          ? Math.round(rawFontSize)
+          : 13;
       s.themePreset = isLookPreset(raw.themePreset) ? raw.themePreset : 'minimal';
       s.showPromptInput = typeof raw.showPromptInput === 'boolean' ? raw.showPromptInput : true;
       s.fontSmoothing = typeof raw.fontSmoothing === 'boolean' ? raw.fontSmoothing : true;

@@ -118,6 +118,7 @@ export interface PersistedState {
   mergedLinesAdded?: number;
   mergedLinesRemoved?: number;
   terminalFont?: string;
+  terminalFontSize?: number;
   themePreset?: LookPreset;
   showPromptInput?: boolean;
   fontSmoothing?: boolean;
@@ -184,6 +185,7 @@ export interface AppStore {
   mergedLinesAdded: number;
   mergedLinesRemoved: number;
   terminalFont: string;
+  terminalFontSize: number;
   themePreset: LookPreset;
   showPromptInput: boolean;
   fontSmoothing: boolean;

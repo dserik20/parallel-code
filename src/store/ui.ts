@@ -74,6 +74,10 @@ export function setTerminalFont(terminalFont: string): void {
   setStore('terminalFont', terminalFont);
 }
 
+export function setTerminalFontSize(size: number): void {
+  setStore('terminalFontSize', Math.round(Math.max(10, Math.min(20, size))));
+}
+
 export function setThemePreset(themePreset: LookPreset): void {
   setStore('themePreset', themePreset);
 }

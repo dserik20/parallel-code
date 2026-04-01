@@ -198,7 +198,9 @@ export function TaskAITerminal(props: TaskAITerminalProps) {
                       onReady={(focusFn) =>
                         registerFocusFn(`${props.task.id}:ai-terminal`, focusFn)
                       }
-                      fontSize={Math.round(13 * getFontScale(`${props.task.id}:ai-terminal`))}
+                      fontSize={Math.round(
+                        store.terminalFontSize * getFontScale(`${props.task.id}:ai-terminal`),
+                      )}
                     />
                   </Show>
                 </>

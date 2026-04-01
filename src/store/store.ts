@@ -93,6 +93,7 @@ export {
   toggleSidebar,
   toggleArena,
   setTerminalFont,
+  setTerminalFontSize,
   setThemePreset,
   setAutoTrustFolders,
   setShowPlans,
