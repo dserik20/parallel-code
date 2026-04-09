@@ -50,7 +50,6 @@ export function NewTaskDialog(props: NewTaskDialogProps) {
   const [branchesLoading, setBranchesLoading] = createSignal(false);
   const [skipPermissions, setSkipPermissions] = createSignal(false);
   const [dockerMode, setDockerMode] = createSignal(false);
-  const [dockerUserOptedOut, setDockerUserOptedOut] = createSignal(false);
   const [dockerImageReady, setDockerImageReady] = createSignal<boolean | null>(null); // null = unknown
   const [dockerBuilding, setDockerBuilding] = createSignal(false);
   const [dockerBuildOutput, setDockerBuildOutput] = createSignal('');
@@ -120,7 +119,6 @@ export function NewTaskDialog(props: NewTaskDialogProps) {
     setGitIsolation('worktree');
     setSkipPermissions(false);
     setDockerMode(false);
-    setDockerUserOptedOut(false);
     setDockerImageReady(null);
     setDockerBuilding(false);
     setDockerBuildOutput('');
@@ -283,14 +281,6 @@ export function NewTaskDialog(props: NewTaskDialogProps) {
     }
     const proj = getProject(pid);
     setGitIsolation(proj?.defaultGitIsolation ?? 'worktree');
-  });
-
-  // Auto-enable Docker when skip-permissions is turned on and Docker is available,
-  // but respect the user's explicit choice to disable it
-  createEffect(() => {
-    if (skipPermissions() && store.dockerAvailable && !dockerUserOptedOut()) {
-      setDockerMode(true);
-    }
   });
 
   // Check if the default Docker image exists when Docker mode is enabled (debounced)
@@ -755,12 +745,7 @@ export function NewTaskDialog(props: NewTaskDialogProps) {
               <input
                 type="checkbox"
                 checked={dockerMode()}
-                onChange={(e) => {
-                  const checked = e.currentTarget.checked;
-                  setDockerMode(checked);
-                  if (!checked) setDockerUserOptedOut(true);
-                  else setDockerUserOptedOut(false);
-                }}
+                onChange={(e) => setDockerMode(e.currentTarget.checked)}
                 style={{ 'accent-color': theme.accent, cursor: 'inherit' }}
               />
               Run in Docker container
