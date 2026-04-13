@@ -59,6 +59,7 @@ export interface Task {
   planFileName?: string;
   stepsEnabled?: boolean;
   stepsContent?: StepEntry[];
+  lastInputAt?: string;
 }
 
 export interface Terminal {

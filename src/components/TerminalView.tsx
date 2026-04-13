@@ -9,7 +9,7 @@ import { getTerminalFontFamily } from '../lib/fonts';
 import { getTerminalTheme } from '../lib/theme';
 import { matchesGlobalShortcut } from '../lib/shortcuts';
 import { isMac } from '../lib/platform';
-import { store } from '../store/store';
+import { store, setTaskLastInputAt } from '../store/store';
 import { registerTerminal, unregisterTerminal, markDirty } from '../lib/terminalFitManager';
 import type { PtyOutput } from '../ipc/types';
 
@@ -384,6 +384,9 @@ export function TerminalView(props: TerminalViewProps) {
         inputFlushTimer = undefined;
       }
       fireAndForget(IPC.WriteToAgent, { agentId, data });
+      if (!props.isShell && (data.includes('\r') || data.includes('\n'))) {
+        setTaskLastInputAt(props.taskId, new Date().toISOString());
+      }
     }
 
     function enqueueInput(data: string) {
@@ -393,6 +396,7 @@ export function TerminalView(props: TerminalViewProps) {
         return;
       }
       if (inputFlushTimer !== undefined) return;
+      // eslint-disable-next-line solid/reactivity
       inputFlushTimer = window.setTimeout(() => {
         inputFlushTimer = undefined;
         flushPendingInput();

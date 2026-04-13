@@ -51,6 +51,7 @@ export {
   setPlanContent,
   setStepsContent,
   setTaskStepsEnabled,
+  setTaskLastInputAt,
 } from './tasks';
 export {
   setActiveTask,

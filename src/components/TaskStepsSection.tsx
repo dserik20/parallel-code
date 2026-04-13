@@ -21,7 +21,11 @@ function statusColor(status: string): string {
 
 function relativeTime(timestamp: string): string {
   const now = Date.now();
-  const then = new Date(timestamp).getTime();
+  // Append Z if no timezone is specified — ISO strings without timezone are
+  // parsed as local time by JS, which causes wrong relative times in non-UTC zones.
+  const ts =
+    timestamp.endsWith('Z') || /[+-]\d{2}:/.test(timestamp.slice(-6)) ? timestamp : timestamp + 'Z';
+  const then = new Date(ts).getTime();
   if (isNaN(then)) return '';
   const diffMs = now - then;
   if (diffMs < 60_000) return 'just now';
@@ -88,6 +92,17 @@ export function TaskStepsSection(props: TaskStepsSectionProps) {
     if (s.length <= 1) return [];
     return s.slice(0, -1);
   });
+  const isInteracting = () => {
+    const li = props.task.lastInputAt;
+    if (!li) return false;
+    const last = latestStep();
+    if (!last) return true;
+    const stepTs =
+      last.timestamp.endsWith('Z') || /[+-]\d{2}:/.test(last.timestamp.slice(-6))
+        ? last.timestamp
+        : last.timestamp + 'Z';
+    return new Date(li) > new Date(stepTs);
+  };
 
   createEffect(() => {
     const len = steps().length;
@@ -142,7 +157,25 @@ export function TaskStepsSection(props: TaskStepsSectionProps) {
             >
               Steps
             </span>
-            <span style={{ 'font-size': sf(10), color: theme.fgSubtle }}>waiting...</span>
+            <Show
+              when={isInteracting()}
+              fallback={
+                <span style={{ 'font-size': sf(10), color: theme.fgSubtle }}>waiting...</span>
+              }
+            >
+              <span
+                class="status-dot-pulse"
+                style={{
+                  width: '5px',
+                  height: '5px',
+                  'border-radius': '50%',
+                  background: theme.fgSubtle,
+                  display: 'inline-block',
+                  'flex-shrink': '0',
+                }}
+              />
+              <span style={{ 'font-size': sf(10), color: theme.fgSubtle }}>Interacting...</span>
+            </Show>
           </div>
         </Show>
 
@@ -345,6 +378,31 @@ export function TaskStepsSection(props: TaskStepsSectionProps) {
                   </Show>
                 </div>
               )}
+            </Show>
+
+            {/* Interacting indicator — shown when user sent input after last step */}
+            <Show when={isInteracting()}>
+              <div
+                style={{
+                  display: 'flex',
+                  'align-items': 'center',
+                  gap: '5px',
+                  padding: '4px 2px 2px',
+                }}
+              >
+                <span
+                  class="status-dot-pulse"
+                  style={{
+                    width: '5px',
+                    height: '5px',
+                    'border-radius': '50%',
+                    background: theme.fgSubtle,
+                    display: 'inline-block',
+                    'flex-shrink': '0',
+                  }}
+                />
+                <span style={{ 'font-size': sf(9), color: theme.fgSubtle }}>Interacting...</span>
+              </div>
             </Show>
           </div>
         </Show>
