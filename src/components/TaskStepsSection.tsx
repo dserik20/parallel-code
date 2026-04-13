@@ -146,6 +146,7 @@ export function TaskStepsSection(props: TaskStepsSectionProps) {
             tabIndex={0}
             onClick={() => setTaskFocusedPanel(props.task.id, 'steps')}
             onKeyDown={(e) => {
+              if (e.altKey) return;
               const SCROLL_STEP_PX = 60;
               if (e.key === 'ArrowDown') {
                 e.preventDefault();
