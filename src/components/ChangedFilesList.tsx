@@ -219,7 +219,7 @@ export function ChangedFilesList(props: ChangedFilesListProps) {
                 'white-space': 'nowrap',
                 cursor: 'pointer',
                 'border-radius': '3px',
-                opacity: !row().isDir && row().node.file?.committed ? '0.45' : '1',
+                opacity: row().isDir || row().node.file?.committed ? '0.45' : '1',
                 background: selectedIndex() === i ? theme.bgHover : 'transparent',
               }}
               onClick={() => {
@@ -236,8 +236,8 @@ export function ChangedFilesList(props: ChangedFilesListProps) {
                 <>
                   <span
                     style={{
-                      color: theme.fgMuted,
-                      width: '12px',
+                      color: theme.fg,
+                      width: '10px',
                       'text-align': 'center',
                       'flex-shrink': '0',
                       'font-size': sf(9),
@@ -250,7 +250,7 @@ export function ChangedFilesList(props: ChangedFilesListProps) {
                       flex: '1',
                       overflow: 'hidden',
                       'text-overflow': 'ellipsis',
-                      color: theme.fgMuted,
+                      color: theme.fg,
                     }}
                     title={row().node.path}
                   >
@@ -258,7 +258,7 @@ export function ChangedFilesList(props: ChangedFilesListProps) {
                   </span>
                   <span
                     style={{
-                      color: theme.fgMuted,
+                      color: theme.fg,
                       'font-size': sf(10),
                       'flex-shrink': '0',
                     }}
