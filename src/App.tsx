@@ -596,9 +596,41 @@ function App() {
       },
     });
     registerShortcut({
+      key: '=',
+      cmdOrCtrl: true,
+      global: true,
+      dialogSafe: true,
+      handler: () => adjustGlobalScale(1),
+    });
+    // Ctrl++ with Shift (US/UK keyboards: Shift+= produces '+')
+    registerShortcut({
+      key: '+',
+      cmdOrCtrl: true,
+      shift: true,
+      global: true,
+      dialogSafe: true,
+      handler: () => adjustGlobalScale(1),
+    });
+    // Ctrl++ without Shift (European keyboards: dedicated + key; also NumPad+)
+    registerShortcut({
+      key: '+',
+      cmdOrCtrl: true,
+      global: true,
+      dialogSafe: true,
+      handler: () => adjustGlobalScale(1),
+    });
+    registerShortcut({
+      key: '-',
+      cmdOrCtrl: true,
+      global: true,
+      dialogSafe: true,
+      handler: () => adjustGlobalScale(-1),
+    });
+    registerShortcut({
       key: '0',
       cmdOrCtrl: true,
       global: true,
+      dialogSafe: true,
       handler: () => {
         const taskId = store.activeTaskId;
         if (taskId) resetFontScale(taskId);
