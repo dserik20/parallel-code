@@ -92,7 +92,7 @@ export function TaskNotesPanel(props: TaskNotesPanelProps) {
                     <button
                       style={{
                         padding: '2px 8px',
-                        'font-size': sf(10),
+                        'font-size': sf(11),
                         background: notesTab() === 'notes' ? theme.taskPanelBg : 'transparent',
                         color: notesTab() === 'notes' ? theme.fg : theme.fgMuted,
                         border: 'none',
@@ -110,7 +110,7 @@ export function TaskNotesPanel(props: TaskNotesPanelProps) {
                     <button
                       style={{
                         padding: '2px 8px',
-                        'font-size': sf(10),
+                        'font-size': sf(11),
                         background: notesTab() === 'plan' ? theme.taskPanelBg : 'transparent',
                         color: notesTab() === 'plan' ? theme.fg : theme.fgMuted,
                         border: 'none',
@@ -141,7 +141,7 @@ export function TaskNotesPanel(props: TaskNotesPanelProps) {
                       border: 'none',
                       padding: '6px 8px',
                       color: theme.fg,
-                      'font-size': sf(11),
+                      'font-size': sf(12),
                       'font-family': "'JetBrains Mono', monospace",
                       resize: 'none',
                       outline: 'none',
@@ -169,7 +169,7 @@ export function TaskNotesPanel(props: TaskNotesPanelProps) {
                         padding: '6px 8px',
                         background: theme.taskPanelBg,
                         color: theme.fg,
-                        'font-size': sf(11),
+                        'font-size': sf(12),
                         'font-family': "'JetBrains Mono', monospace",
                         outline: 'none',
                       }}
@@ -219,7 +219,7 @@ export function TaskNotesPanel(props: TaskNotesPanelProps) {
                         bottom: '8px',
                         right: '8px',
                         padding: '4px 16px',
-                        'font-size': sf(11),
+                        'font-size': sf(12),
                         'font-family': "'JetBrains Mono', monospace",
                         background: `color-mix(in srgb, ${theme.accent} 12%, ${theme.bgInput})`,
                         color: theme.fg,
@@ -256,7 +256,7 @@ export function TaskNotesPanel(props: TaskNotesPanelProps) {
                 <div
                   style={{
                     padding: '4px 8px',
-                    'font-size': sf(10),
+                    'font-size': sf(11),
                     'font-weight': '600',
                     color: theme.fgMuted,
                     'text-transform': 'uppercase',
@@ -285,7 +285,7 @@ export function TaskNotesPanel(props: TaskNotesPanelProps) {
                       title={`${commit().hash.slice(0, 7)} ${commit().message}`}
                       style={{
                         padding: '4px 8px',
-                        'font-size': sf(10),
+                        'font-size': sf(11),
                         'font-family': "'JetBrains Mono', monospace",
                         color: theme.fgMuted,
                         'border-bottom': `1px solid ${theme.border}`,

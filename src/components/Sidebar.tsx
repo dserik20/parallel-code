@@ -269,7 +269,7 @@ export function Sidebar() {
             </svg>
             <span
               style={{
-                'font-size': sf(14),
+                'font-size': sf(15),
                 'font-weight': '600',
                 color: theme.fg,
                 'font-family': "'JetBrains Mono', monospace",
@@ -312,7 +312,7 @@ export function Sidebar() {
           >
             <label
               style={{
-                'font-size': sf(11),
+                'font-size': sf(12),
                 color: theme.fgMuted,
                 'text-transform': 'uppercase',
                 'letter-spacing': '0.05em',
@@ -351,7 +351,7 @@ export function Sidebar() {
                   background: isProjectMissing(project.id)
                     ? `color-mix(in srgb, ${theme.warning} 8%, ${theme.bgInput})`
                     : theme.bgInput,
-                  'font-size': sf(11),
+                  'font-size': sf(12),
                   cursor: 'pointer',
                   border:
                     store.sidebarFocused && store.sidebarFocusedProjectId === project.id
@@ -383,7 +383,7 @@ export function Sidebar() {
                   <div
                     style={{
                       color: isProjectMissing(project.id) ? theme.warning : theme.fgSubtle,
-                      'font-size': sf(10),
+                      'font-size': sf(11),
                       'white-space': 'nowrap',
                       overflow: 'hidden',
                       'text-overflow': 'ellipsis',
@@ -406,7 +406,7 @@ export function Sidebar() {
                     border: 'none',
                     color: theme.fgSubtle,
                     cursor: 'pointer',
-                    'font-size': sf(12),
+                    'font-size': sf(13),
                     'line-height': '1',
                     padding: '0 2px',
                     'flex-shrink': '0',
@@ -419,7 +419,7 @@ export function Sidebar() {
           </For>
 
           <Show when={store.projects.length === 0}>
-            <span style={{ 'font-size': sf(10), color: theme.fgSubtle, padding: '0 2px' }}>
+            <span style={{ 'font-size': sf(11), color: theme.fgSubtle, padding: '0 2px' }}>
               No projects linked yet.
             </span>
           </Show>
@@ -441,7 +441,7 @@ export function Sidebar() {
                 padding: '8px 14px',
                 color: theme.fgMuted,
                 cursor: 'pointer',
-                'font-size': sf(12),
+                'font-size': sf(13),
                 'font-weight': '500',
                 display: 'flex',
                 'align-items': 'center',
@@ -473,7 +473,7 @@ export function Sidebar() {
               padding: '8px 14px',
               color: theme.fgMuted,
               cursor: 'pointer',
-              'font-size': sf(12),
+              'font-size': sf(13),
               'font-weight': '500',
               display: 'flex',
               'align-items': 'center',
@@ -534,7 +534,7 @@ export function Sidebar() {
                 <Show when={totalCount() > 0}>
                   <span
                     style={{
-                      'font-size': sf(10),
+                      'font-size': sf(11),
                       color: theme.fgSubtle,
                       'text-transform': 'uppercase',
                       'letter-spacing': '0.05em',
@@ -583,7 +583,7 @@ export function Sidebar() {
           >
             <span
               style={{
-                'font-size': sf(10),
+                'font-size': sf(11),
                 color: theme.fgSubtle,
                 'text-transform': 'uppercase',
                 'letter-spacing': '0.05em',
@@ -633,7 +633,7 @@ export function Sidebar() {
                 border: `1px solid ${connected() ? theme.success : theme.border}`,
                 'border-radius': '8px',
                 color: accent(),
-                'font-size': sf(12),
+                'font-size': sf(13),
                 cursor: 'pointer',
                 'flex-shrink': '0',
               }}
@@ -710,7 +710,7 @@ function CurrentBranchBadge(props: { branchName: string }) {
   return (
     <span
       style={{
-        'font-size': sf(10),
+        'font-size': sf(11),
         'font-weight': '600',
         padding: '1px 5px',
         'border-radius': '3px',
@@ -748,7 +748,7 @@ function CollapsedTaskRow(props: { taskId: string }) {
             'border-radius': '6px',
             background: 'transparent',
             color: theme.fgSubtle,
-            'font-size': sf(12),
+            'font-size': sf(13),
             'font-weight': '400',
             cursor: 'pointer',
             'white-space': 'nowrap',
@@ -804,7 +804,7 @@ function TaskRow(props: TaskRowProps) {
               'border-radius': '6px',
               background: 'transparent',
               color: store.activeTaskId === props.taskId ? theme.fg : theme.fgMuted,
-              'font-size': sf(12),
+              'font-size': sf(13),
               'font-weight': store.activeTaskId === props.taskId ? '500' : '400',
               cursor: props.dragFromIndex() !== null ? 'grabbing' : 'pointer',
               'white-space': 'nowrap',
@@ -824,7 +824,7 @@ function TaskRow(props: TaskRowProps) {
             <Show when={t().gitIsolation === 'direct'}>
               <span
                 style={{
-                  'font-size': sf(10),
+                  'font-size': sf(11),
                   'font-weight': '600',
                   padding: '1px 5px',
                   'border-radius': '3px',

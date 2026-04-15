@@ -86,7 +86,7 @@ function DropOverlay() {
       <span
         style={{
           color: theme.fg,
-          'font-size': '16px',
+          'font-size': '17px',
           'font-weight': '600',
           'font-family': 'var(--font-ui)',
         }}
@@ -96,7 +96,7 @@ function DropOverlay() {
       <span
         style={{
           color: theme.fgMuted,
-          'font-size': '12px',
+          'font-size': '13px',
           'font-family': 'var(--font-ui)',
         }}
       >
@@ -638,7 +638,7 @@ function App() {
             'font-family': "var(--font-ui, 'Sora', sans-serif)",
           }}
         >
-          <div style={{ 'font-size': '18px', 'font-weight': '600', color: theme.error }}>
+          <div style={{ 'font-size': '19px', 'font-weight': '600', color: theme.error }}>
             Something went wrong
           </div>
           <div
@@ -660,7 +660,7 @@ function App() {
               padding: '8px 24px',
               'border-radius': '8px',
               cursor: 'pointer',
-              'font-size': '14px',
+              'font-size': '15px',
             }}
           >
             Reload
@@ -691,7 +691,7 @@ function App() {
           background: theme.bg,
           color: theme.fg,
           'font-family': "var(--font-ui, 'Sora', sans-serif)",
-          'font-size': '13px',
+          'font-size': '14px',
           overflow: 'hidden',
         }}
       >
@@ -768,7 +768,7 @@ function App() {
               'border-radius': '8px',
               padding: '10px 20px',
               color: theme.fg,
-              'font-size': '13px',
+              'font-size': '14px',
               'z-index': '2000',
               'box-shadow': '0 4px 24px rgba(0,0,0,0.4)',
               cursor: 'pointer',

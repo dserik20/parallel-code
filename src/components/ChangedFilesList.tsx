@@ -221,7 +221,7 @@ export function ChangedFilesList(props: ChangedFilesListProps) {
         height: '100%',
         overflow: 'hidden',
         'font-family': "'JetBrains Mono', monospace",
-        'font-size': sf(11),
+        'font-size': sf(12),
         outline: 'none',
       }}
     >
@@ -264,7 +264,7 @@ export function ChangedFilesList(props: ChangedFilesListProps) {
                       width: '10px',
                       'text-align': 'center',
                       'flex-shrink': '0',
-                      'font-size': sf(9),
+                      'font-size': sf(10),
                     }}
                   >
                     {collapsed().has(row().node.path) ? '\u25B8' : '\u25BE'}
@@ -284,7 +284,7 @@ export function ChangedFilesList(props: ChangedFilesListProps) {
                     <span
                       style={{
                         color: theme.fg,
-                        'font-size': sf(10),
+                        'font-size': sf(11),
                         'flex-shrink': '0',
                       }}
                     >

@@ -83,7 +83,7 @@ export function TilingLayout() {
                         'border-radius': '12px',
                         border: `1px solid ${theme.border}`,
                         color: theme.fgMuted,
-                        'font-size': '13px',
+                        'font-size': '14px',
                       }}
                     >
                       <div style={{ color: theme.error, 'font-weight': '600' }}>Panel crashed</div>
@@ -200,7 +200,7 @@ export function TilingLayout() {
                 <div style={{ 'text-align': 'center' }}>
                   <div
                     style={{
-                      'font-size': '15px',
+                      'font-size': '16px',
                       color: theme.fgMuted,
                       'font-weight': '500',
                       'margin-bottom': '6px',
@@ -208,7 +208,7 @@ export function TilingLayout() {
                   >
                     All tasks are collapsed
                   </div>
-                  <div style={{ 'font-size': '12px', color: theme.fgSubtle }}>
+                  <div style={{ 'font-size': '13px', color: theme.fgSubtle }}>
                     Click a task in the sidebar to restore it
                   </div>
                 </div>
@@ -244,7 +244,7 @@ export function TilingLayout() {
                     <div style={{ 'text-align': 'center' }}>
                       <div
                         style={{
-                          'font-size': '15px',
+                          'font-size': '16px',
                           color: theme.fgMuted,
                           'font-weight': '500',
                           'margin-bottom': '6px',
@@ -252,7 +252,7 @@ export function TilingLayout() {
                       >
                         Link your first project to get started
                       </div>
-                      <div style={{ 'font-size': '12px', color: theme.fgSubtle }}>
+                      <div style={{ 'font-size': '13px', color: theme.fgSubtle }}>
                         A project is a local folder with your code
                       </div>
                     </div>
@@ -265,7 +265,7 @@ export function TilingLayout() {
                         padding: '8px 20px',
                         color: theme.fg,
                         cursor: 'pointer',
-                        'font-size': '13px',
+                        'font-size': '14px',
                         'font-weight': '500',
                         display: 'flex',
                         'align-items': 'center',
@@ -296,7 +296,7 @@ export function TilingLayout() {
                     display: 'flex',
                     'align-items': 'center',
                     'justify-content': 'center',
-                    'font-size': '24px',
+                    'font-size': '25px',
                     color: theme.fgSubtle,
                   }}
                 >
@@ -305,7 +305,7 @@ export function TilingLayout() {
                 <div style={{ 'text-align': 'center' }}>
                   <div
                     style={{
-                      'font-size': '15px',
+                      'font-size': '16px',
                       color: theme.fgMuted,
                       'font-weight': '500',
                       'margin-bottom': '6px',
@@ -313,7 +313,7 @@ export function TilingLayout() {
                   >
                     No tasks yet
                   </div>
-                  <div style={{ 'font-size': '12px', color: theme.fgSubtle }}>
+                  <div style={{ 'font-size': '13px', color: theme.fgSubtle }}>
                     Press{' '}
                     <kbd
                       style={{
@@ -322,7 +322,7 @@ export function TilingLayout() {
                         'border-radius': '4px',
                         padding: '2px 6px',
                         'font-family': "'JetBrains Mono', monospace",
-                        'font-size': '11px',
+                        'font-size': '12px',
                       }}
                     >
                       {mod}+N

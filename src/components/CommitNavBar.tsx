@@ -139,7 +139,7 @@ export function CommitNavBar(props: CommitNavBarProps) {
           cursor: 'pointer',
           'border-radius': '4px',
           padding: compact() ? '1px 4px' : '2px 8px',
-          'font-size': sf(compact() ? 9 : 11),
+          'font-size': sf(compact() ? 10 : 12),
           'font-family': "'JetBrains Mono', monospace",
           'font-weight': isAllChanges() ? '600' : '400',
           'line-height': '1',
@@ -156,7 +156,7 @@ export function CommitNavBar(props: CommitNavBarProps) {
         {(commit) => (
           <span
             style={{
-              'font-size': sf(11),
+              'font-size': sf(12),
               'font-family': "'JetBrains Mono', monospace",
               color: theme.fgMuted,
               'white-space': 'nowrap',

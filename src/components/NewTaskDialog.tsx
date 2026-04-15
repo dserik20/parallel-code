@@ -475,7 +475,7 @@ export function NewTaskDialog(props: NewTaskDialogProps) {
           <h2
             style={{
               margin: '0',
-              'font-size': '16px',
+              'font-size': '17px',
               color: theme.fg,
               'font-weight': '600',
             }}
@@ -521,7 +521,7 @@ export function NewTaskDialog(props: NewTaskDialogProps) {
               'border-radius': '8px',
               padding: '10px 14px',
               color: theme.fg,
-              'font-size': '13px',
+              'font-size': '14px',
               'font-family': "'JetBrains Mono', monospace",
               outline: 'none',
               resize: 'vertical',
@@ -551,14 +551,14 @@ export function NewTaskDialog(props: NewTaskDialogProps) {
               'border-radius': '8px',
               padding: '10px 14px',
               color: theme.fg,
-              'font-size': '13px',
+              'font-size': '14px',
               outline: 'none',
             }}
           />
           <Show when={gitIsolation() === 'direct' && selectedProjectPath()}>
             <div
               style={{
-                'font-size': '11px',
+                'font-size': '12px',
                 'font-family': "'JetBrains Mono', monospace",
                 color: theme.fgSubtle,
                 display: 'flex',
@@ -635,12 +635,12 @@ export function NewTaskDialog(props: NewTaskDialogProps) {
             onChange={setGitIsolation}
           />
           <Show when={directDisabled()}>
-            <span style={{ 'font-size': '11px', color: theme.fgSubtle }}>
+            <span style={{ 'font-size': '12px', color: theme.fgSubtle }}>
               This project already has a task on the current branch
             </span>
           </Show>
           <Show when={gitIsolation() === 'direct'}>
-            <div style={{ ...bannerStyle(theme.warning), 'font-size': '12px' }}>
+            <div style={{ ...bannerStyle(theme.warning), 'font-size': '13px' }}>
               Changes will be made on the selected branch without worktree isolation.
             </div>
           </Show>
@@ -673,7 +673,7 @@ export function NewTaskDialog(props: NewTaskDialogProps) {
               'border-radius': '8px',
               padding: '10px 14px',
               color: theme.fg,
-              'font-size': '13px',
+              'font-size': '14px',
               'font-family': "'JetBrains Mono', monospace",
               outline: 'none',
               opacity: branchesLoading() ? '0.5' : '1',
@@ -693,7 +693,7 @@ export function NewTaskDialog(props: NewTaskDialogProps) {
                 display: 'flex',
                 'align-items': 'center',
                 gap: '8px',
-                'font-size': '12px',
+                'font-size': '13px',
                 color: theme.fg,
                 cursor: 'pointer',
               }}
@@ -719,7 +719,7 @@ export function NewTaskDialog(props: NewTaskDialogProps) {
                   display: 'flex',
                   'align-items': 'center',
                   gap: '8px',
-                  'font-size': '12px',
+                  'font-size': '13px',
                   color: theme.fg,
                   cursor: 'pointer',
                 }}
@@ -736,19 +736,19 @@ export function NewTaskDialog(props: NewTaskDialogProps) {
                 <div
                   style={{
                     ...bannerStyle(theme.warning),
-                    'font-size': '12px',
+                    'font-size': '13px',
                   }}
                 >
                   The agent will run without asking for confirmation. It can read, write, and delete
                   files, and execute commands without your approval.
                 </div>
                 <Show when={!dockerMode() && store.dockerAvailable}>
-                  <div style={{ 'font-size': '11px', color: theme.fgMuted }}>
+                  <div style={{ 'font-size': '12px', color: theme.fgMuted }}>
                     Tip: Enable Docker isolation to limit the blast radius of skip-permissions mode.
                   </div>
                 </Show>
                 <Show when={!store.dockerAvailable}>
-                  <div style={{ 'font-size': '11px', color: theme.fgMuted }}>
+                  <div style={{ 'font-size': '12px', color: theme.fgMuted }}>
                     Install Docker to enable container isolation for safer skip-permissions mode.
                   </div>
                 </Show>
@@ -767,7 +767,7 @@ export function NewTaskDialog(props: NewTaskDialogProps) {
                   display: 'flex',
                   'align-items': 'center',
                   gap: '8px',
-                  'font-size': '12px',
+                  'font-size': '13px',
                   color: theme.fg,
                   cursor: 'pointer',
                 }}
@@ -783,7 +783,7 @@ export function NewTaskDialog(props: NewTaskDialogProps) {
               <Show when={dockerMode()}>
                 <div
                   style={{
-                    'font-size': '12px',
+                    'font-size': '13px',
                     color: theme.success ?? theme.accent,
                     background: `color-mix(in srgb, ${theme.success ?? theme.accent} 8%, transparent)`,
                     padding: '8px 12px',
@@ -796,7 +796,7 @@ export function NewTaskDialog(props: NewTaskDialogProps) {
                 </div>
                 <div style={{ display: 'flex', 'align-items': 'center', gap: '8px' }}>
                   <label
-                    style={{ 'font-size': '11px', color: theme.fgMuted, 'white-space': 'nowrap' }}
+                    style={{ 'font-size': '12px', color: theme.fgMuted, 'white-space': 'nowrap' }}
                   >
                     Image:
                   </label>
@@ -812,7 +812,7 @@ export function NewTaskDialog(props: NewTaskDialogProps) {
                       'border-radius': '6px',
                       padding: '5px 10px',
                       color: theme.fg,
-                      'font-size': '12px',
+                      'font-size': '13px',
                       'font-family': "'JetBrains Mono', monospace",
                       outline: 'none',
                     }}
@@ -824,7 +824,7 @@ export function NewTaskDialog(props: NewTaskDialogProps) {
                       display: 'flex',
                       'align-items': 'center',
                       gap: '8px',
-                      'font-size': '11px',
+                      'font-size': '12px',
                       color: theme.fgMuted,
                     }}
                   >
@@ -843,7 +843,7 @@ export function NewTaskDialog(props: NewTaskDialogProps) {
                           border: 'none',
                           'border-radius': '4px',
                           padding: '3px 10px',
-                          'font-size': '11px',
+                          'font-size': '12px',
                           cursor: 'pointer',
                         }}
                       >
@@ -855,7 +855,7 @@ export function NewTaskDialog(props: NewTaskDialogProps) {
                 <Show when={dockerBuilding()}>
                   <div
                     style={{
-                      'font-size': '11px',
+                      'font-size': '12px',
                       color: theme.fgMuted,
                       display: 'flex',
                       'align-items': 'center',
@@ -869,7 +869,7 @@ export function NewTaskDialog(props: NewTaskDialogProps) {
                     <pre
                       ref={buildOutputRef}
                       style={{
-                        'font-size': '10px',
+                        'font-size': '11px',
                         color: theme.fgSubtle,
                         background: theme.bgInput,
                         'border-radius': '4px',
@@ -886,12 +886,12 @@ export function NewTaskDialog(props: NewTaskDialogProps) {
                   </Show>
                 </Show>
                 <Show when={dockerBuildError()}>
-                  <div style={{ 'font-size': '11px', color: theme.error }}>
+                  <div style={{ 'font-size': '12px', color: theme.error }}>
                     Build failed: {dockerBuildError()}
                   </div>
                 </Show>
                 <Show when={dockerImageReady() === true && !dockerBuilding()}>
-                  <div style={{ 'font-size': '11px', color: theme.success ?? theme.accent }}>
+                  <div style={{ 'font-size': '12px', color: theme.success ?? theme.accent }}>
                     Image ready.
                   </div>
                 </Show>
@@ -918,7 +918,7 @@ export function NewTaskDialog(props: NewTaskDialogProps) {
           <div
             style={{
               ...bannerStyle(theme.error),
-              'font-size': '12px',
+              'font-size': '13px',
             }}
           >
             {error()}
@@ -945,7 +945,7 @@ export function NewTaskDialog(props: NewTaskDialogProps) {
               'border-radius': '8px',
               color: theme.fgMuted,
               cursor: 'pointer',
-              'font-size': '13px',
+              'font-size': '14px',
             }}
           >
             Cancel
@@ -961,7 +961,7 @@ export function NewTaskDialog(props: NewTaskDialogProps) {
               'border-radius': '8px',
               color: theme.accentText,
               cursor: 'pointer',
-              'font-size': '13px',
+              'font-size': '14px',
               'font-weight': '500',
               opacity: !canSubmit() ? '0.4' : '1',
               display: 'inline-flex',

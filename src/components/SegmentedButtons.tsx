@@ -71,7 +71,7 @@ export function SegmentedButtons<T extends string>(props: SegmentedButtonsProps<
               style={{
                 flex: '1',
                 padding: '6px 12px',
-                'font-size': '12px',
+                'font-size': '13px',
                 'border-radius': '6px',
                 border: `1px solid ${isActive() ? theme.accent : theme.border}`,
                 background: isActive()

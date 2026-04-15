@@ -68,7 +68,7 @@ function FileBadge(props: { file: string; onFileClick?: (file: string) => void }
         e.currentTarget.style.background = `color-mix(in srgb, ${theme.fgMuted} 10%, transparent)`;
       }}
       style={{
-        'font-size': sf(9),
+        'font-size': sf(10),
         padding: '1px 6px',
         'border-radius': '3px',
         background: `color-mix(in srgb, ${theme.fgMuted} 10%, transparent)`,
@@ -173,7 +173,7 @@ export function TaskStepsSection(props: TaskStepsSectionProps) {
           >
             <span
               style={{
-                'font-size': sf(10),
+                'font-size': sf(11),
                 'font-weight': '600',
                 color: theme.fgMuted,
                 'text-transform': 'uppercase',
@@ -185,10 +185,10 @@ export function TaskStepsSection(props: TaskStepsSectionProps) {
             <Show
               when={isInteracting()}
               fallback={
-                <span style={{ 'font-size': sf(10), color: theme.fgSubtle }}>waiting...</span>
+                <span style={{ 'font-size': sf(11), color: theme.fgSubtle }}>waiting...</span>
               }
             >
-              <WaitingIndicator fontSize={sf(10)} />
+              <WaitingIndicator fontSize={sf(11)} />
             </Show>
           </div>
         </Show>
@@ -255,7 +255,7 @@ export function TaskStepsSection(props: TaskStepsSectionProps) {
                         >
                           <span
                             style={{
-                              'font-size': sf(9),
+                              'font-size': sf(10),
                               color: theme.fgSubtle,
                               'flex-shrink': '0',
                               width: '20px',
@@ -267,7 +267,7 @@ export function TaskStepsSection(props: TaskStepsSectionProps) {
                           <span
                             style={{
                               ...badgeStyle(statusColor(String(step.status ?? ''))),
-                              'font-size': sf(9),
+                              'font-size': sf(10),
                               padding: '1px 5px',
                             }}
                           >
@@ -275,7 +275,7 @@ export function TaskStepsSection(props: TaskStepsSectionProps) {
                           </span>
                           <span
                             style={{
-                              'font-size': sf(11),
+                              'font-size': sf(12),
                               'font-weight': '600',
                               color: theme.fg,
                               overflow: 'hidden',
@@ -293,7 +293,7 @@ export function TaskStepsSection(props: TaskStepsSectionProps) {
                             style={{
                               'margin-left': '32px',
                               padding: '4px 8px',
-                              'font-size': sf(11),
+                              'font-size': sf(12),
                               color: theme.fgMuted,
                               'border-left': `2px solid ${theme.border}`,
                             }}
@@ -353,7 +353,7 @@ export function TaskStepsSection(props: TaskStepsSectionProps) {
                     </span>
                     <span
                       style={{
-                        'font-size': sf(11),
+                        'font-size': sf(12),
                         'font-weight': '600',
                         color: theme.fg,
                         flex: '1',
@@ -363,7 +363,7 @@ export function TaskStepsSection(props: TaskStepsSectionProps) {
                     </span>
                     <Show when={step().timestamp}>
                       <span
-                        style={{ 'font-size': sf(9), color: theme.fgSubtle, 'flex-shrink': '0' }}
+                        style={{ 'font-size': sf(10), color: theme.fgSubtle, 'flex-shrink': '0' }}
                       >
                         {relativeTime(step().timestamp)}
                       </span>
@@ -372,7 +372,7 @@ export function TaskStepsSection(props: TaskStepsSectionProps) {
                   <Show when={step().detail}>
                     <div
                       style={{
-                        'font-size': sf(11),
+                        'font-size': sf(12),
                         color: theme.fgMuted,
                         'margin-top': '4px',
                         'line-height': '1.4',
@@ -409,7 +409,7 @@ export function TaskStepsSection(props: TaskStepsSectionProps) {
                   padding: '4px 2px 2px',
                 }}
               >
-                <WaitingIndicator fontSize={sf(9)} />
+                <WaitingIndicator fontSize={sf(10)} />
               </div>
             </Show>
           </div>

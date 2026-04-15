@@ -231,7 +231,7 @@ function DiffViewerContent(props: DiffViewerDialogProps) {
       >
         <span
           style={{
-            'font-size': sf(13),
+            'font-size': sf(14),
             color: theme.fg,
             'font-weight': '600',
           }}
@@ -240,7 +240,7 @@ function DiffViewerContent(props: DiffViewerDialogProps) {
         </span>
         <span
           style={{
-            'font-size': sf(12),
+            'font-size': sf(13),
             color: theme.success,
             'font-family': "'JetBrains Mono', monospace",
           }}
@@ -249,7 +249,7 @@ function DiffViewerContent(props: DiffViewerDialogProps) {
         </span>
         <span
           style={{
-            'font-size': sf(12),
+            'font-size': sf(13),
             color: theme.error,
             'font-family': "'JetBrains Mono', monospace",
           }}
@@ -290,7 +290,7 @@ function DiffViewerContent(props: DiffViewerDialogProps) {
             border: `1px solid ${theme.borderSubtle}`,
             'border-radius': '4px',
             color: theme.fg,
-            'font-size': sf(12),
+            'font-size': sf(13),
             'font-family': "'JetBrains Mono', monospace",
             padding: '3px 8px',
             width: '200px',
@@ -298,7 +298,7 @@ function DiffViewerContent(props: DiffViewerDialogProps) {
           }}
         />
         <Show when={searchQuery().length > 0}>
-          <span style={{ 'font-size': sf(11), color: theme.fgSubtle, 'white-space': 'nowrap' }}>
+          <span style={{ 'font-size': sf(12), color: theme.fgSubtle, 'white-space': 'nowrap' }}>
             {countMatches()} matches
           </span>
         </Show>
@@ -332,7 +332,7 @@ function DiffViewerContent(props: DiffViewerDialogProps) {
                 padding: '40px',
                 'text-align': 'center',
                 color: theme.fgMuted,
-                'font-size': sf(13),
+                'font-size': sf(14),
               }}
             >
               Loading diffs...
@@ -345,7 +345,7 @@ function DiffViewerContent(props: DiffViewerDialogProps) {
                 padding: '40px',
                 'text-align': 'center',
                 color: theme.error,
-                'font-size': sf(13),
+                'font-size': sf(14),
               }}
             >
               {error()}

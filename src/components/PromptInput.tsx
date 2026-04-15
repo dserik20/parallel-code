@@ -448,7 +448,7 @@ export function PromptInput(props: PromptInputProps) {
             'border-radius': '12px',
             padding: '6px 36px 6px 10px',
             color: theme.fg,
-            'font-size': sf(12),
+            'font-size': sf(13),
             'font-family': "'JetBrains Mono', monospace",
             resize: 'none',
             outline: 'none',

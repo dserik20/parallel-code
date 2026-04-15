@@ -27,7 +27,7 @@ const toolbarBtnStyle = (highlighted: boolean): JSX.CSSProperties => ({
   cursor: 'pointer',
   'border-radius': '4px',
   padding: '4px 12px',
-  'font-size': sf(13),
+  'font-size': sf(14),
   'line-height': '1',
   display: 'flex',
   'align-items': 'center',
@@ -134,7 +134,7 @@ export function TaskShellSection(props: TaskShellSectionProps) {
             title={`Open terminal (${mod}+Shift+T)`}
             style={toolbarBtnStyle(shellToolbarIdx() === 0 && shellToolbarFocused())}
           >
-            <span style={{ 'font-family': 'monospace', 'font-size': sf(13) }}>&gt;_</span>
+            <span style={{ 'font-family': 'monospace', 'font-size': sf(14) }}>&gt;_</span>
             <span>Terminal</span>
           </button>
           <For each={projectBookmarks()}>
@@ -210,7 +210,7 @@ export function TaskShellSection(props: TaskShellSectionProps) {
                         'border-radius': '6px',
                         padding: '2px 6px',
                         'line-height': '1',
-                        'font-size': '14px',
+                        'font-size': '15px',
                       }}
                     >
                       <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor">
@@ -225,7 +225,7 @@ export function TaskShellSection(props: TaskShellSectionProps) {
                           top: '8px',
                           right: '12px',
                           'z-index': '10',
-                          'font-size': sf(11),
+                          'font-size': sf(12),
                           color: shellExits[shellId]?.exitCode === 0 ? theme.success : theme.error,
                           background: 'color-mix(in srgb, var(--island-bg) 80%, transparent)',
                           padding: '4px 12px',
@@ -260,7 +260,7 @@ export function TaskShellSection(props: TaskShellSectionProps) {
                         shellFocusFn = focusFn;
                         if (registeredKey) registerFocusFn(registeredKey, focusFn);
                       }}
-                      fontSize={Math.round(11 * getFontScale(`${props.task.id}:shell`))}
+                      fontSize={Math.round(12 * getFontScale(`${props.task.id}:shell`))}
                       autoFocus
                     />
                   </div>

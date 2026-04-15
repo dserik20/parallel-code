@@ -1,7 +1,7 @@
 import type { JSX } from 'solid-js';
 
 export const badgeStyle = (color: string): JSX.CSSProperties => ({
-  'font-size': '11px',
+  'font-size': '12px',
   'font-weight': '600',
   padding: '2px 8px',
   'border-radius': '4px',

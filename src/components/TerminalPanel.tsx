@@ -102,7 +102,7 @@ export function TerminalPanel(props: TerminalPanelProps) {
           <span
             style={{
               'font-family': 'monospace',
-              'font-size': '13px',
+              'font-size': '14px',
               color: theme.fgMuted,
               'flex-shrink': '0',
             }}
@@ -148,7 +148,7 @@ export function TerminalPanel(props: TerminalPanelProps) {
             args={['-l']}
             cwd=""
             onReady={(focusFn) => registerFocusFn(`${props.terminal.id}:terminal`, focusFn)}
-            fontSize={Math.round(13 * getFontScale(`${props.terminal.id}:terminal`))}
+            fontSize={Math.round(14 * getFontScale(`${props.terminal.id}:terminal`))}
             autoFocus
           />
         </div>

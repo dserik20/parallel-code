@@ -110,7 +110,7 @@ export function TaskAITerminal(props: TaskAITerminalProps) {
                   top: '8px',
                   left: '12px',
                   'z-index': '10',
-                  'font-size': sf(10),
+                  'font-size': sf(11),
                   color: theme.fgMuted,
                   background: 'color-mix(in srgb, var(--island-bg) 80%, transparent)',
                   padding: '2px 8px',
@@ -134,7 +134,7 @@ export function TaskAITerminal(props: TaskAITerminalProps) {
                         top: '8px',
                         right: '12px',
                         'z-index': '10',
-                        'font-size': sf(11),
+                        'font-size': sf(12),
                         color: a().exitCode === 0 ? theme.success : theme.error,
                         background: 'color-mix(in srgb, var(--island-bg) 80%, transparent)',
                         padding: '4px 12px',
@@ -164,7 +164,7 @@ export function TaskAITerminal(props: TaskAITerminalProps) {
                             padding: '2px 8px',
                             'border-radius': '4px',
                             cursor: 'pointer',
-                            'font-size': sf(10),
+                            'font-size': sf(11),
                           }}
                         >
                           Resume
@@ -199,7 +199,7 @@ export function TaskAITerminal(props: TaskAITerminalProps) {
                       onReady={(focusFn) =>
                         registerFocusFn(`${props.task.id}:ai-terminal`, focusFn)
                       }
-                      fontSize={Math.round(13 * getFontScale(`${props.task.id}:ai-terminal`))}
+                      fontSize={Math.round(14 * getFontScale(`${props.task.id}:ai-terminal`))}
                     />
                   </Show>
                 </>
@@ -253,7 +253,7 @@ function MarkdownViewerDialog(props: {
       >
         <span
           style={{
-            'font-size': sf(13),
+            'font-size': sf(14),
             color: theme.fg,
             'font-weight': '600',
             'font-family': "'JetBrains Mono', monospace",
@@ -328,7 +328,7 @@ function AgentRestartMenu(props: { agentId: string; agentDefId: string }) {
           'border-radius': '4px 0 0 4px',
           'border-right': 'none',
           cursor: 'pointer',
-          'font-size': sf(10),
+          'font-size': sf(11),
         }}
       >
         Restart
@@ -345,7 +345,7 @@ function AgentRestartMenu(props: { agentId: string; agentDefId: string }) {
           padding: '2px 4px',
           'border-radius': '0 4px 4px 0',
           cursor: 'pointer',
-          'font-size': sf(10),
+          'font-size': sf(11),
         }}
       >
         ▾
@@ -369,7 +369,7 @@ function AgentRestartMenu(props: { agentId: string; agentDefId: string }) {
           <div
             style={{
               padding: '4px 10px',
-              'font-size': sf(9),
+              'font-size': sf(10),
               color: theme.fgMuted,
             }}
           >
@@ -396,7 +396,7 @@ function AgentRestartMenu(props: { agentId: string; agentDefId: string }) {
                   color: theme.fg,
                   padding: '5px 10px',
                   cursor: 'pointer',
-                  'font-size': sf(10),
+                  'font-size': sf(11),
                   'text-align': 'left',
                 }}
                 onMouseEnter={(e) => {
