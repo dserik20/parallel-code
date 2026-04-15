@@ -595,6 +595,12 @@ function App() {
         }
       },
     });
+    // Zoom in: three variants because keyboard layouts differ.
+    // matches() requires an exact shift-state match (!!e.shiftKey === !!s.shift),
+    // so we need separate registrations for each case:
+    //   key '=' no shift  — Ctrl+= on US/UK keyboards
+    //   key '+' shift     — Ctrl+Shift+= on US/UK keyboards (e.key is '+' when Shift held)
+    //   key '+' no shift  — Ctrl++ on European keyboards (dedicated + key) and NumPad+
     registerShortcut({
       key: '=',
       cmdOrCtrl: true,
@@ -602,7 +608,6 @@ function App() {
       dialogSafe: true,
       handler: () => adjustGlobalScale(1),
     });
-    // Ctrl++ with Shift (US/UK keyboards: Shift+= produces '+')
     registerShortcut({
       key: '+',
       cmdOrCtrl: true,
@@ -611,7 +616,6 @@ function App() {
       dialogSafe: true,
       handler: () => adjustGlobalScale(1),
     });
-    // Ctrl++ without Shift (European keyboards: dedicated + key; also NumPad+)
     registerShortcut({
       key: '+',
       cmdOrCtrl: true,
