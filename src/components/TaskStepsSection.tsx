@@ -27,6 +27,7 @@ function truncate(text: string, max: number): string {
 
 /** Append Z when no timezone is present — ISO strings without TZ are parsed as local time. */
 function normalizeIsoTimestamp(ts: string): string {
+  if (!ts) return '';
   return ts.endsWith('Z') || /[+-]\d{2}:/.test(ts.slice(-6)) ? ts : ts + 'Z';
 }
 
