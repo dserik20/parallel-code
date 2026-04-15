@@ -2,6 +2,7 @@ import { produce } from 'solid-js/store';
 import { invoke, Channel } from '../lib/ipc';
 import { IPC } from '../../electron/ipc/channels';
 import { store, setStore, cleanupPanelEntries } from './core';
+import { saveState } from './persistence';
 import { setTaskFocusedPanel } from './focus';
 import { getProject, getProjectPath, getProjectBranchPrefix, isProjectMissing } from './projects';
 import { setPendingShellCommand } from '../lib/bookmarks';
@@ -181,6 +182,7 @@ export async function createTask(opts: CreateTaskOptions): Promise<string> {
   };
 
   initTaskInStore(taskId, task, agent, projectId, agentDef);
+  saveState(); // fire-and-forget — errors handled internally
   return taskId;
 }
 
@@ -609,12 +611,10 @@ export function setPlanContent(
 }
 
 export function setStepsContent(taskId: string, steps: unknown[] | null): void {
-  setStore(
-    'tasks',
-    taskId,
-    'stepsContent',
-    steps && steps.length > 0 ? (steps as StepEntry[]) : undefined,
-  );
+  const valid = steps
+    ? (steps.filter((s) => s !== null && typeof s === 'object' && !Array.isArray(s)) as StepEntry[])
+    : [];
+  setStore('tasks', taskId, 'stepsContent', valid.length > 0 ? valid : undefined);
 }
 
 export function setTaskLastInputAt(taskId: string): void {

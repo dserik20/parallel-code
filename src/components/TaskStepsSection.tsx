@@ -284,7 +284,7 @@ export function TaskStepsSection(props: TaskStepsSectionProps) {
                               flex: '1',
                             }}
                           >
-                            {truncate(step.summary, 140)}
+                            {truncate(step.summary ?? '', 140)}
                           </span>
                         </div>
 
@@ -303,7 +303,11 @@ export function TaskStepsSection(props: TaskStepsSectionProps) {
                                 {truncate(step.detail ?? '', 280)}
                               </div>
                             </Show>
-                            <Show when={step.files_touched && step.files_touched.length > 0}>
+                            <Show
+                              when={
+                                Array.isArray(step.files_touched) && step.files_touched.length > 0
+                              }
+                            >
                               <div
                                 style={{
                                   display: 'flex',
@@ -355,7 +359,7 @@ export function TaskStepsSection(props: TaskStepsSectionProps) {
                         flex: '1',
                       }}
                     >
-                      {truncate(step().summary, 140)}
+                      {truncate(step().summary ?? '', 140)}
                     </span>
                     <Show when={step().timestamp}>
                       <span
