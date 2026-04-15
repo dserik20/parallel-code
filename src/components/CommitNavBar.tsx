@@ -8,6 +8,7 @@ interface CommitNavBarProps {
   selectedCommitHash: string | null;
   onNavigate: (hash: string | null) => void;
   compact?: boolean;
+  showMessage?: boolean;
 }
 
 export function CommitNavBar(props: CommitNavBarProps) {
@@ -151,19 +152,18 @@ export function CommitNavBar(props: CommitNavBarProps) {
         All
       </button>
 
-      {/* Commit message indicator when viewing a specific commit */}
-      <Show when={selectedCommit()}>
+      <Show when={props.showMessage && selectedCommit()}>
         {(commit) => (
           <span
             style={{
-              'font-size': sf(compact() ? 9 : 11),
+              'font-size': sf(11),
               'font-family': "'JetBrains Mono', monospace",
               color: theme.fgMuted,
               'white-space': 'nowrap',
               overflow: 'hidden',
               'text-overflow': 'ellipsis',
               'min-width': '0',
-              'max-width': compact() ? '150px' : '300px',
+              'max-width': '300px',
             }}
             title={`${commit().hash.slice(0, 7)} ${commit().message}`}
           >
