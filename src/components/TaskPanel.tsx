@@ -121,11 +121,12 @@ export function TaskPanel(props: TaskPanelProps) {
     }
   });
 
-  // Poll for branch commits (same cadence as git status)
+  // Poll for branch commits for all worktree-isolated tasks (not just the active one),
+  // so CommitNavBar shows correct state regardless of which column is focused.
   createEffect(() => {
     const worktreePath = props.task.worktreePath;
     const baseBranch = props.task.baseBranch;
-    if (!worktreePath || !props.isActive) return;
+    if (props.task.gitIsolation !== 'worktree') return;
     let cancelled = false;
 
     async function fetchCommits() {
@@ -363,6 +364,7 @@ export function TaskPanel(props: TaskPanelProps) {
         commitList={commitList()}
         selectedCommit={selectedCommit()}
         onCommitNavigate={setSelectedCommit}
+        gitIsolation={props.task.gitIsolation}
       />
       <EditProjectDialog project={editingProject()} onClose={() => setEditingProjectId(null)} />
       <PlanViewerDialog

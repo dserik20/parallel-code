@@ -37,6 +37,11 @@ export function TaskNotesPanel(props: TaskNotesPanelProps) {
     hadPlan = hasPlan;
   });
 
+  const selectedCommitInfo = () =>
+    props.selectedCommit !== null && props.task.gitIsolation === 'worktree'
+      ? props.commitList.find((c) => c.hash === props.selectedCommit)
+      : undefined;
+
   let notesRef: HTMLTextAreaElement | undefined;
   let planScrollRef: HTMLDivElement | undefined;
   let changedFilesRef: HTMLDivElement | undefined;
@@ -265,7 +270,7 @@ export function TaskNotesPanel(props: TaskNotesPanelProps) {
                 >
                   <span style={{ 'flex-shrink': '0' }}>Changed Files</span>
                   <span style={{ flex: '1' }} />
-                  <Show when={props.task.worktreePath}>
+                  <Show when={props.task.gitIsolation === 'worktree'}>
                     <CommitNavBar
                       commits={props.commitList}
                       selectedCommitHash={props.selectedCommit}
@@ -274,6 +279,30 @@ export function TaskNotesPanel(props: TaskNotesPanelProps) {
                     />
                   </Show>
                 </div>
+                <Show when={selectedCommitInfo()}>
+                  {(commit) => (
+                    <div
+                      title={`${commit().hash.slice(0, 7)} ${commit().message}`}
+                      style={{
+                        padding: '4px 8px',
+                        'font-size': sf(10),
+                        'font-family': "'JetBrains Mono', monospace",
+                        color: theme.fgMuted,
+                        'border-bottom': `1px solid ${theme.border}`,
+                        'flex-shrink': '0',
+                        'max-height': '2.8em',
+                        'line-height': '1.4',
+                        overflow: 'hidden',
+                        'word-break': 'break-word',
+                      }}
+                    >
+                      <span style={{ color: theme.accent, 'font-weight': '600' }}>
+                        {commit().hash.slice(0, 7)}
+                      </span>{' '}
+                      {commit().message}
+                    </div>
+                  )}
+                </Show>
                 <div style={{ flex: '1', overflow: 'hidden' }}>
                   <ChangedFilesList
                     worktreePath={props.task.worktreePath}

@@ -14,6 +14,7 @@ import { ReviewProvider, useReview } from './ReviewProvider';
 import type { FileDiff } from '../lib/unified-diff-parser';
 import type { ReviewAnnotation } from './review-types';
 import type { CommitInfo } from '../ipc/types';
+import type { GitIsolationMode } from '../store/types';
 
 interface DiffViewerDialogProps {
   /** Which file to auto-scroll to (the one the user clicked). Null = closed. */
@@ -34,6 +35,8 @@ interface DiffViewerDialogProps {
   selectedCommit?: string | null;
   /** Callback to navigate to a different commit or null for all changes */
   onCommitNavigate?: (hash: string | null) => void;
+  /** Git isolation mode — CommitNavBar is only shown for worktree-isolated tasks */
+  gitIsolation?: GitIsolationMode;
 }
 
 /** Compile review annotations into a prompt string for the agent. */
@@ -83,6 +86,7 @@ export function DiffViewerDialog(props: DiffViewerDialogProps) {
             commitList={props.commitList}
             selectedCommit={props.selectedCommit}
             onCommitNavigate={props.onCommitNavigate}
+            gitIsolation={props.gitIsolation}
           />
         </ReviewProvider>
       </Show>
@@ -253,7 +257,7 @@ function DiffViewerContent(props: DiffViewerDialogProps) {
           -{totalRemoved()}
         </span>
 
-        <Show when={props.worktreePath}>
+        <Show when={props.worktreePath && props.gitIsolation === 'worktree'}>
           <span
             style={{
               width: '1px',
@@ -267,6 +271,7 @@ function DiffViewerContent(props: DiffViewerDialogProps) {
             commits={props.commitList ?? []}
             selectedCommitHash={props.selectedCommit ?? null}
             onNavigate={(hash) => props.onCommitNavigate?.(hash)}
+            showMessage={true}
           />
         </Show>
 
