@@ -253,7 +253,7 @@ function DiffViewerContent(props: DiffViewerDialogProps) {
           -{totalRemoved()}
         </span>
 
-        <Show when={props.commitList && props.commitList.length > 0}>
+        <Show when={props.worktreePath}>
           <span
             style={{
               width: '1px',

@@ -265,7 +265,7 @@ export function TaskNotesPanel(props: TaskNotesPanelProps) {
                 >
                   <span style={{ 'flex-shrink': '0' }}>Changed Files</span>
                   <span style={{ flex: '1' }} />
-                  <Show when={props.commitList.length > 0}>
+                  <Show when={props.task.worktreePath}>
                     <CommitNavBar
                       commits={props.commitList}
                       selectedCommitHash={props.selectedCommit}
