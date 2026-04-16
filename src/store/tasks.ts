@@ -71,6 +71,19 @@ async function writeToAgentWhenReady(agentId: string, data: string): Promise<voi
   throw lastErr ?? new Error(`Timed out waiting for agent ${agentId} to become writable`);
 }
 
+const STEPS_INSTRUCTION =
+  'IMPORTANT: Maintain .claude/steps.json throughout this task — a JSON array tracking your progress. ' +
+  'Before beginning each major step, append an entry with status "starting". ' +
+  'After completing the step, append a follow-up entry with the appropriate status (never modify previous entries). ' +
+  'Rules for each field:\n' +
+  '  summary: ≤60 chars, start with an action verb (e.g. "Add JWT middleware", "Fix token refresh bug"). No filler words like "Successfully", "Now", or "Going to".\n' +
+  '  detail: one sentence max, only if it adds context the summary cannot carry — omit the field entirely otherwise.\n' +
+  '  files_touched: only files you actually wrote or modified in this step, not files you read.\n' +
+  '  status: starting | investigating | implementing | testing | awaiting_review | done.\n' +
+  '  timestamp: ISO 8601.\n' +
+  'Example: {"summary":"Add JWT validation middleware","status":"implementing","detail":"Wraps every protected route handler.","files_touched":["src/middleware/auth.ts"],"timestamp":"2024-01-15T10:30:00Z"}. ' +
+  'When you want the user to review your work: write an entry with status "awaiting_review" and pause. Resume appending entries when the user continues.';
+
 export interface CreateTaskOptions {
   name: string;
   agentDef: AgentDef;
@@ -139,20 +152,9 @@ export async function createTask(opts: CreateTaskOptions): Promise<string> {
 
   // Inject steps instruction into the first prompt so the agent maintains steps.json.
   // Appended after a separator for recency bias; savedInitialPrompt keeps the original clean text.
-  const stepsInstruction =
-    'IMPORTANT: Maintain .claude/steps.json throughout this task — a JSON array tracking your progress. ' +
-    'Before beginning each major step, append an entry with status "starting". ' +
-    'After completing the step, append a follow-up entry with the appropriate status (never modify previous entries). ' +
-    'Rules for each field:\n' +
-    '  summary: ≤60 chars, start with an action verb (e.g. "Add JWT middleware", "Fix token refresh bug"). No filler words like "Successfully", "Now", or "Going to".\n' +
-    '  detail: one sentence max, only if it adds context the summary cannot carry — omit the field entirely otherwise.\n' +
-    '  files_touched: only files you actually wrote or modified in this step, not files you read.\n' +
-    '  status: starting | investigating | implementing | testing | awaiting_review | done.\n' +
-    '  timestamp: ISO 8601.\n' +
-    'Example: {"summary":"Add JWT validation middleware","status":"implementing","detail":"Wraps every protected route handler.","files_touched":["src/middleware/auth.ts"],"timestamp":"2024-01-15T10:30:00Z"}. ' +
-    'When you want the user to review your work: write an entry with status "awaiting_review" and pause. Resume appending entries when the user continues.';
+  // Only possible here when an initialPrompt was provided; if not, sendPrompt handles injection.
   const effectivePrompt =
-    stepsEnabled && initialPrompt ? `${initialPrompt}\n\n---\n${stepsInstruction}` : initialPrompt;
+    stepsEnabled && initialPrompt ? `${initialPrompt}\n\n---\n${STEPS_INSTRUCTION}` : initialPrompt;
 
   const task: Task = {
     id: taskId,
@@ -367,6 +369,14 @@ export function updateTaskNotes(taskId: string, notes: string): void {
 }
 
 export async function sendPrompt(taskId: string, agentId: string, text: string): Promise<void> {
+  const task = store.tasks[taskId];
+
+  // When steps tracking is enabled but no initial prompt was provided in the dialog,
+  // the steps instruction was never injected in createTask.  Append it to the first
+  // prompt the user sends so the agent still knows to maintain steps.json.
+  const injectSteps = !!(task?.stepsEnabled && !task?.lastPrompt && !task?.initialPrompt);
+  const effectiveText = injectSteps ? `${text}\n\n---\n${STEPS_INSTRUCTION}` : text;
+
   // Send a Focus In escape sequence before the prompt text.  When the user focuses
   // the PromptInput textarea, the xterm.js terminal loses DOM focus.  For agents
   // that enable focus tracking (\x1b[?1004h), xterm.js sends \x1b[O (Focus Out)
@@ -375,7 +385,7 @@ export async function sendPrompt(taskId: string, agentId: string, text: string):
   // Send text and Enter separately so TUI apps (Claude Code, Codex)
   // don't treat the \r as part of a pasted block
   setTaskLastInputAt(taskId);
-  await writeToAgentWhenReady(agentId, text);
+  await writeToAgentWhenReady(agentId, effectiveText);
   await new Promise((r) => setTimeout(r, 50));
   await writeToAgentWhenReady(agentId, '\r');
   setStore('tasks', taskId, 'lastPrompt', text);
