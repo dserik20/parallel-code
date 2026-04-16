@@ -12,30 +12,47 @@ interface StepsWatcher {
 
 const watchers = new Map<string, StepsWatcher>();
 
+/**
+ * Tracks how many entries have already been processed (timestamped) per task.
+ * Any entry at an index >= processedCount is considered new and will have its
+ * timestamp overwritten with the host clock — regardless of what the AI wrote.
+ * Entries below that index keep their existing timestamps (they were stamped by
+ * us on a previous read, possibly before an app restart).
+ */
+const processedCount = new Map<string, number>();
+
 /** Sends parsed steps content for a task to the renderer. */
 function sendStepsContent(win: BrowserWindow, taskId: string, stepsFile: string): void {
   if (win.isDestroyed()) return;
   const steps = readStepsFile(stepsFile);
-  if (steps) stampMissingTimestamps(steps, stepsFile);
+  if (steps) applyTimestamps(steps, stepsFile, taskId);
   win.webContents.send(IPC.StepsContent, { taskId, steps });
 }
 
 /**
- * Stamps any entries lacking a `timestamp` field with the current time and
- * writes the file back so the timestamps persist. The subsequent file-change
- * event will re-read and find all entries already stamped — no infinite loop.
+ * Stamps timestamps on new entries (indices >= processedCount) with the host
+ * clock, overwriting whatever the AI may have written. Existing entries that
+ * already have a timestamp are left alone. Writes the file back when anything
+ * changed; the subsequent watcher event finds nothing new and stops.
  */
-function stampMissingTimestamps(steps: unknown[], stepsFile: string): void {
+function applyTimestamps(steps: unknown[], stepsFile: string, taskId: string): void {
+  const prevCount = processedCount.get(taskId) ?? 0;
+  const now = new Date().toISOString();
   let dirty = false;
-  for (const entry of steps) {
+
+  for (let i = 0; i < steps.length; i++) {
+    const entry = steps[i];
     if (entry !== null && typeof entry === 'object' && !Array.isArray(entry)) {
       const e = entry as Record<string, unknown>;
-      if (!e['timestamp']) {
-        e['timestamp'] = new Date().toISOString();
+      if (i >= prevCount || !e['timestamp']) {
+        e['timestamp'] = now;
         dirty = true;
       }
     }
   }
+
+  processedCount.set(taskId, steps.length);
+
   if (!dirty) return;
   try {
     fs.writeFileSync(stepsFile, JSON.stringify(steps, null, 2), 'utf-8');
@@ -203,6 +220,7 @@ export function stopStepsWatcher(taskId: string): void {
   if (entry.timeout) clearTimeout(entry.timeout);
   if (entry.fsWatcher) entry.fsWatcher.close();
   watchers.delete(taskId);
+  processedCount.delete(taskId);
 }
 
 /** Read steps.json from a worktree. Used for one-shot restore. */
