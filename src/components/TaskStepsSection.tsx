@@ -60,6 +60,7 @@ interface TaskStepsSectionProps {
   task: Task;
   isActive: boolean;
   onFileClick?: (file: string) => void;
+  onNaturalHeight?: (h: number) => void;
 }
 
 /** Clickable file path badge shown on step cards. */
@@ -117,6 +118,7 @@ function WaitingIndicator(props: { fontSize: string }) {
 export function TaskStepsSection(props: TaskStepsSectionProps) {
   const [expandedHistory, setExpandedHistory] = createSignal<Set<number>>(new Set());
   let scrollRef!: HTMLDivElement;
+  let latestCardRef: HTMLDivElement | undefined;
 
   onMount(() => {
     useFocusRegistration(`${props.task.id}:steps`, () => scrollRef?.focus());
@@ -145,6 +147,15 @@ export function TaskStepsSection(props: TaskStepsSectionProps) {
     if (len > 0 && scrollRef) {
       scrollRef.scrollTop = scrollRef.scrollHeight;
     }
+  });
+
+  createEffect(() => {
+    const step = latestStep();
+    const interacting = isInteracting();
+    if (!step || !latestCardRef) return;
+    const cardH = latestCardRef.offsetHeight;
+    const indicatorH = interacting ? 28 : 0;
+    props.onNaturalHeight?.(cardH + indicatorH + 24);
   });
 
   function toggleHistory(originalIndex: number) {
@@ -382,6 +393,9 @@ export function TaskStepsSection(props: TaskStepsSectionProps) {
           <Show when={latestStep()}>
             {(step) => (
               <div
+                ref={(el) => {
+                  latestCardRef = el;
+                }}
                 style={{
                   'border-radius': '6px',
                   padding: '8px 10px',

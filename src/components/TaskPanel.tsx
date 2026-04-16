@@ -53,6 +53,7 @@ export function TaskPanel(props: TaskPanelProps) {
   const [commitList, setCommitList] = createSignal<CommitInfo[]>([]);
   const [selectedCommit, setSelectedCommit] = createSignal<string | null>(null);
   const [editingProjectId, setEditingProjectId] = createSignal<string | null>(null);
+  const [stepsNaturalHeight, setStepsNaturalHeight] = createSignal(110);
   let panelRef!: HTMLDivElement;
   let promptRef: HTMLTextAreaElement | undefined;
   let titleEditHandle: EditableTextHandle | undefined;
@@ -197,12 +198,13 @@ export function TaskPanel(props: TaskPanelProps) {
       get fixed() {
         return !props.task.stepsContent?.length;
       },
-      requestSize: () => (props.task.stepsContent?.length ? 110 : 28),
+      requestSize: stepsNaturalHeight,
       content: () => (
         <TaskStepsSection
           task={props.task}
           isActive={props.isActive}
           onFileClick={(file) => setDiffScrollTarget(file)}
+          onNaturalHeight={setStepsNaturalHeight}
         />
       ),
     };
