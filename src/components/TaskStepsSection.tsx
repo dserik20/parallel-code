@@ -1,7 +1,6 @@
 import { Show, For, createSignal, createMemo, createEffect, onCleanup, onMount } from 'solid-js';
 import { theme } from '../lib/theme';
 import { sf } from '../lib/fontScale';
-import { badgeStyle } from '../lib/badgeStyle';
 import { useFocusRegistration } from '../lib/focus-registration';
 import { setTaskFocusedPanel } from '../store/store';
 import type { Task } from '../store/types';
@@ -98,29 +97,89 @@ function FileBadge(props: { file: string; onFileClick?: (file: string) => void }
   );
 }
 
-/** Dashed badge identifying a sub-agent's entries. Caps width so an oversized agent_id
- *  can't push controls off the row. */
-function AgentBadge(props: { agentId: string }) {
+/** Hash agent_id to a stable hue so multiple concurrent sub-agents are distinguishable
+ *  at a glance. Kept mid-saturation / dim so chips don't compete with status color. */
+function agentChipHue(agentId: string): number {
+  let hash = 0;
+  for (let i = 0; i < agentId.length; i++) hash = (hash * 31 + agentId.charCodeAt(i)) >>> 0;
+  return hash % 360;
+}
+
+/** Tiny gutter chip identifying a sub-agent. Replaces both the step index and the
+ *  previous dashed agent badge for rows owned by a sub-agent. Full id shown on hover. */
+function AgentChip(props: { agentId: string }) {
+  const hue = () => agentChipHue(props.agentId);
+  const letter = () => (props.agentId.charAt(0) || '?').toUpperCase();
   return (
     <span
       title={`Sub-agent: ${props.agentId}`}
       style={{
-        'font-size': sf(9),
-        padding: '0 5px',
+        width: '18px',
+        height: '14px',
         'border-radius': '3px',
-        background: 'transparent',
-        color: theme.fgMuted,
-        border: `1px dashed color-mix(in srgb, ${theme.fgMuted} 50%, transparent)`,
+        background: `hsl(${hue()}, 45%, 30%)`,
+        color: `hsl(${hue()}, 70%, 82%)`,
+        'font-size': sf(9),
+        'font-weight': '600',
+        display: 'inline-flex',
+        'align-items': 'center',
+        'justify-content': 'center',
         'flex-shrink': '0',
         'font-family': "'JetBrains Mono', monospace",
-        'max-width': '120px',
-        overflow: 'hidden',
-        'text-overflow': 'ellipsis',
-        'white-space': 'nowrap',
       }}
     >
-      {props.agentId}
+      {letter()}
     </span>
+  );
+}
+
+/** Leading sub-agent banner shown above a step's main row. Stacking sub-agent info
+ *  on its own line keeps the summary row uncluttered when agent_id, status, and
+ *  summary would otherwise compete for horizontal space. */
+function AgentHeader(props: { agentId: string }) {
+  return (
+    <div
+      style={{
+        display: 'flex',
+        'align-items': 'center',
+        gap: '5px',
+        'margin-bottom': '3px',
+      }}
+    >
+      <AgentChip agentId={props.agentId} />
+      <span
+        title={`Sub-agent: ${props.agentId}`}
+        style={{
+          'font-size': sf(10),
+          color: theme.fgMuted,
+          'font-family': "'JetBrains Mono', monospace",
+          overflow: 'hidden',
+          'text-overflow': 'ellipsis',
+          'white-space': 'nowrap',
+          'min-width': '0',
+        }}
+      >
+        {props.agentId}
+      </span>
+    </div>
+  );
+}
+
+/** Compact colored dot that replaces the previous status pill. Status text is available
+ *  via the title attribute for accessibility / hover disclosure. */
+function StatusDot(props: { status: string }) {
+  return (
+    <span
+      title={props.status.replaceAll('_', ' ')}
+      style={{
+        width: '6px',
+        height: '6px',
+        'border-radius': '50%',
+        background: statusColor(props.status),
+        'flex-shrink': '0',
+        display: 'inline-block',
+      }}
+    />
   );
 }
 
@@ -397,92 +456,91 @@ export function TaskStepsSection(props: TaskStepsSectionProps) {
                         onMouseLeave={() => setHoveredHistory(null)}
                         style={{
                           display: 'flex',
-                          'align-items': 'center',
-                          gap: '6px',
-                          padding: '3px 6px 3px 0',
+                          'flex-direction': 'column',
                           cursor: 'pointer',
                           'border-radius': '4px',
                           'user-select': 'none',
-                          'border-left': `3px solid ${statusColor(String(step.status ?? ''))}`,
-                          'padding-left': indented() ? `${8 + SUB_AGENT_INDENT_PX}px` : '8px',
+                          padding: indented() ? '4px 6px 3px 8px' : '0 6px 0 8px',
+                          'margin-left': indented() ? `${SUB_AGENT_INDENT_PX}px` : '0',
                           background: isHovered()
                             ? `color-mix(in srgb, ${theme.fgMuted} 8%, transparent)`
                             : 'transparent',
                         }}
                       >
-                        <span
-                          style={{
-                            'font-size': sf(10),
-                            color: theme.fgSubtle,
-                            'flex-shrink': '0',
-                            width: '18px',
-                            'text-align': 'right',
-                          }}
-                        >
-                          {idx() + 1}
-                        </span>
                         <Show when={step.agent_id}>
-                          <AgentBadge agentId={step.agent_id ?? ''} />
+                          <AgentHeader agentId={step.agent_id ?? ''} />
                         </Show>
-                        <span
+                        <div
                           style={{
-                            ...badgeStyle(statusColor(String(step.status ?? ''))),
-                            'font-size': sf(10),
-                            padding: '1px 5px',
+                            display: 'flex',
+                            'align-items': 'center',
+                            gap: '6px',
+                            padding: indented() ? '0' : '3px 0',
                           }}
                         >
-                          {String(step.status ?? '').replaceAll('_', ' ')}
-                        </span>
-                        <span
-                          style={{
-                            'font-size': sf(12),
-                            'font-weight': '600',
-                            color: theme.fg,
-                            overflow: 'hidden',
-                            'text-overflow': 'ellipsis',
-                            'white-space': 'nowrap',
-                            flex: '1',
-                          }}
-                        >
-                          {step.summary ?? ''}
-                        </span>
-                        <CopyButton
-                          text={step.summary ?? ''}
-                          visible={isHovered()}
-                          label="summary"
-                        />
-                        <Show when={props.onJumpToStep}>
-                          <JumpButton
+                          <span
+                            style={{
+                              'font-size': sf(10),
+                              color: theme.fgSubtle,
+                              'flex-shrink': '0',
+                              width: '18px',
+                              'text-align': 'right',
+                            }}
+                          >
+                            {idx() + 1}
+                          </span>
+                          <StatusDot status={String(step.status ?? '')} />
+                          <span
+                            style={{
+                              'font-size': sf(12),
+                              'font-weight': '600',
+                              color: theme.fg,
+                              overflow: 'hidden',
+                              'text-overflow': 'ellipsis',
+                              'white-space': 'nowrap',
+                              flex: '1',
+                            }}
+                          >
+                            {step.summary ?? ''}
+                          </span>
+                          <CopyButton
+                            text={step.summary ?? ''}
                             visible={isHovered()}
-                            onClick={() => props.onJumpToStep?.(idx())}
+                            label="summary"
                           />
-                        </Show>
-                        <Show when={step.timestamp}>
-                          <span
-                            style={{
-                              'font-size': sf(9),
-                              color: theme.fgSubtle,
-                              'flex-shrink': '0',
-                            }}
-                          >
-                            {stepDuration(
-                              step.timestamp,
-                              steps()[idx() + 1]?.timestamp ?? new Date().toISOString(),
-                            )}
-                          </span>
-                        </Show>
-                        <Show when={(step.files_touched?.length ?? 0) > 0}>
-                          <span
-                            style={{
-                              'font-size': sf(9),
-                              color: theme.fgSubtle,
-                              'flex-shrink': '0',
-                            }}
-                          >
-                            {step.files_touched?.length ?? 0}{' '}
-                            {(step.files_touched?.length ?? 0) === 1 ? 'file' : 'files'}
-                          </span>
-                        </Show>
+                          <Show when={props.onJumpToStep}>
+                            <JumpButton
+                              visible={isHovered()}
+                              onClick={() => props.onJumpToStep?.(idx())}
+                            />
+                          </Show>
+                          <Show when={step.timestamp}>
+                            <span
+                              style={{
+                                'font-size': sf(9),
+                                color: theme.fgSubtle,
+                                'flex-shrink': '0',
+                              }}
+                            >
+                              {stepDuration(
+                                step.timestamp,
+                                steps()[idx() + 1]?.timestamp ?? new Date().toISOString(),
+                              )}
+                            </span>
+                          </Show>
+                          <Show when={(step.files_touched?.length ?? 0) > 0}>
+                            <span
+                              style={{
+                                'font-size': sf(9),
+                                color: theme.fgSubtle,
+                                'flex-shrink': '0',
+                              }}
+                            >
+                              {step.files_touched?.length ?? 0}{' '}
+                              {(step.files_touched?.length ?? 0) === 1 ? 'file' : 'files'}
+                            </span>
+                          </Show>
+                        </div>
                       </div>
 
                       <Show when={isExpanded()}>
@@ -492,7 +550,7 @@ export function TaskStepsSection(props: TaskStepsSectionProps) {
                             padding: '4px 8px',
                             'font-size': sf(12),
                             color: theme.fgMuted,
-                            'border-left': `2px solid ${statusColor(String(step.status ?? ''))}`,
+                            'border-left': `1px solid ${theme.border}`,
                           }}
                         >
                           <Show when={step.timestamp}>
@@ -556,11 +614,13 @@ export function TaskStepsSection(props: TaskStepsSectionProps) {
                   ref={setLatestCardRef}
                   style={{
                     'border-radius': '6px',
-                    padding: '8px 10px 8px 12px',
-                    'border-left': `3px solid ${statusColor(String(step().status ?? ''))}`,
+                    padding: '6px 10px 8px',
                     'margin-left': indented() ? `${SUB_AGENT_INDENT_PX}px` : '0',
                   }}
                 >
+                  <Show when={step().agent_id}>
+                    <AgentHeader agentId={step().agent_id ?? ''} />
+                  </Show>
                   <div
                     onMouseEnter={() => setLatestHovered('summary')}
                     onMouseLeave={() => setLatestHovered(null)}
@@ -571,12 +631,7 @@ export function TaskStepsSection(props: TaskStepsSectionProps) {
                       'margin-bottom': '4px',
                     }}
                   >
-                    <Show when={step().agent_id}>
-                      <AgentBadge agentId={step().agent_id ?? ''} />
-                    </Show>
-                    <span style={badgeStyle(statusColor(String(step().status ?? '')))}>
-                      {String(step().status ?? '').replaceAll('_', ' ')}
-                    </span>
+                    <StatusDot status={String(step().status ?? '')} />
                     <span
                       style={{
                         'font-size': sf(12),
