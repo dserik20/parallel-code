@@ -106,6 +106,12 @@ const SYMLINK_CANDIDATES = [
 /** Entries inside `.claude` that must NOT be symlinked (kept per-worktree). */
 const CLAUDE_DIR_EXCLUDE = new Set(['plans', 'settings.local.json']);
 
+/**
+ * Files Claude Code's sandbox (bwrap) read-only-binds on startup. They must
+ * exist at the worktree path or the sandbox fails before Claude launches.
+ */
+const CLAUDE_REQUIRED_FILES = ['settings.json', 'settings.local.json'];
+
 // --- Internal helpers ---
 
 async function detectMainBranch(repoRoot: string): Promise<string> {
@@ -454,7 +460,33 @@ export async function createWorktree(
     }
   }
 
+  ensureClaudeSandboxFiles(worktreePath);
+
   return { path: worktreePath, branch: branchName };
+}
+
+/**
+ * Claude Code's sandbox (bwrap) read-only-binds `.claude/settings.json` and
+ * `.claude/settings.local.json` on startup; the targets must exist or the
+ * sandbox fails before Claude launches. Create empty placeholders if missing.
+ */
+function ensureClaudeSandboxFiles(worktreePath: string): void {
+  const claudeDir = path.join(worktreePath, '.claude');
+  try {
+    fs.mkdirSync(claudeDir, { recursive: true });
+  } catch (err) {
+    console.warn(`Failed to create ${claudeDir}:`, err);
+    return;
+  }
+  for (const file of CLAUDE_REQUIRED_FILES) {
+    const filePath = path.join(claudeDir, file);
+    if (fs.existsSync(filePath)) continue;
+    try {
+      fs.writeFileSync(filePath, '{}\n');
+    } catch (err) {
+      console.warn(`Failed to create placeholder ${filePath}:`, err);
+    }
+  }
 }
 
 export async function removeWorktree(
