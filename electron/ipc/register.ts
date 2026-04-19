@@ -29,6 +29,7 @@ import { startStepsWatcher, stopStepsWatcher, readStepsForWorktree } from './ste
 import { startRemoteServer } from '../remote/server.js';
 import {
   getGitIgnoredDirs,
+  listProjectEntries,
   getMainBranch,
   getCurrentBranch,
   getChangedFiles,
@@ -59,6 +60,7 @@ import { listAgents } from './agents.js';
 import { saveAppState, loadAppState } from './persistence.js';
 import { spawn } from 'child_process';
 import { askAboutCode, cancelAskAboutCode } from './ask-code.js';
+import { runProjectCommands, cancelProjectCommands } from './setup.js';
 import { getSystemMonospaceFonts } from './system-fonts.js';
 import path from 'path';
 import {
@@ -324,6 +326,10 @@ export function registerAllHandlers(win: BrowserWindow): void {
     validatePath(args.projectRoot, 'projectRoot');
     return getGitIgnoredDirs(args.projectRoot);
   });
+  ipcMain.handle(IPC.ListProjectEntries, (_e, args) => {
+    validatePath(args.projectRoot, 'projectRoot');
+    return listProjectEntries(args.projectRoot);
+  });
   ipcMain.handle(IPC.GetWorktreeStatus, (_e, args) => {
     validatePath(args.worktreePath, 'worktreePath');
     const baseBranch = args.baseBranch || undefined;
@@ -538,6 +544,32 @@ export function registerAllHandlers(win: BrowserWindow): void {
   ipcMain.handle(IPC.CancelAskAboutCode, (_e, args) => {
     assertString(args.requestId, 'requestId');
     cancelAskAboutCode(args.requestId);
+  });
+
+  // --- Setup / teardown commands ---
+  const handleRunCommands = (_e: unknown, args: unknown) => {
+    const a = args as {
+      worktreePath: unknown;
+      projectRoot: unknown;
+      commands: unknown;
+      onOutput: { __CHANNEL_ID__: unknown };
+    };
+    validatePath(a.worktreePath, 'worktreePath');
+    validatePath(a.projectRoot, 'projectRoot');
+    assertStringArray(a.commands, 'commands');
+    assertString(a.onOutput?.__CHANNEL_ID__, 'channelId');
+    return runProjectCommands(win, {
+      worktreePath: a.worktreePath as string,
+      projectRoot: a.projectRoot as string,
+      commands: a.commands as string[],
+      channelId: a.onOutput.__CHANNEL_ID__ as string,
+    });
+  };
+  ipcMain.handle(IPC.RunSetupCommands, handleRunCommands);
+  ipcMain.handle(IPC.RunTeardownCommands, handleRunCommands);
+  ipcMain.handle(IPC.CancelProjectCommands, (_e, args) => {
+    assertString(args.channelId, 'channelId');
+    cancelProjectCommands(args.channelId);
   });
 
   // --- File links ---

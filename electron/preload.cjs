@@ -25,6 +25,7 @@ const ALLOWED_CHANNELS = new Set([
   'get_all_file_diffs',
   'get_all_file_diffs_from_branch',
   'get_gitignored_dirs',
+  'list_project_entries',
   'get_worktree_status',
   'commit_all',
   'discard_uncommitted',
@@ -96,6 +97,10 @@ const ALLOWED_CHANNELS = new Set([
   // Ask about code
   'ask_about_code',
   'cancel_ask_about_code',
+  // Setup / teardown
+  'run_setup_commands',
+  'run_teardown_commands',
+  'cancel_project_commands',
   // System
   'get_system_fonts',
   // File links
