@@ -26,6 +26,7 @@ export {
 } from './agents';
 export {
   createTask,
+  createImportedTask,
   closeTask,
   retryCloseTask,
   mergeTask,

@@ -80,6 +80,7 @@ export async function saveState(): Promise<void> {
       agentDef: firstAgent?.def ?? null,
       gitIsolation: task.gitIsolation,
       baseBranch: task.baseBranch,
+      externalWorktree: task.externalWorktree,
       skipPermissions: task.skipPermissions,
       dockerMode: task.dockerMode,
       dockerSource: task.dockerSource,
@@ -109,6 +110,7 @@ export async function saveState(): Promise<void> {
       agentDef: firstAgent?.def ?? task.savedAgentDef ?? null,
       gitIsolation: task.gitIsolation,
       baseBranch: task.baseBranch,
+      externalWorktree: task.externalWorktree,
       skipPermissions: task.skipPermissions,
       dockerMode: task.dockerMode,
       dockerSource: task.dockerSource,
@@ -384,6 +386,7 @@ export async function loadState(): Promise<void> {
           lastPrompt: pt.lastPrompt,
           gitIsolation: legacy.gitIsolation ?? (legacy.directMode ? 'direct' : 'worktree'),
           baseBranch: legacy.baseBranch || undefined,
+          externalWorktree: pt.externalWorktree,
           skipPermissions: pt.skipPermissions === true,
           dockerMode: pt.dockerMode === true ? true : undefined,
           dockerSource:
@@ -452,6 +455,7 @@ export async function loadState(): Promise<void> {
           gitIsolation:
             legacyCollapsed.gitIsolation ?? (legacyCollapsed.directMode ? 'direct' : 'worktree'),
           baseBranch: legacyCollapsed.baseBranch || undefined,
+          externalWorktree: pt.externalWorktree,
           skipPermissions: pt.skipPermissions === true,
           dockerMode: pt.dockerMode === true ? true : undefined,
           dockerSource:

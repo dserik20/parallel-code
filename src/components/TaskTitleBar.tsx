@@ -74,6 +74,9 @@ export function TaskTitleBar(props: TaskTitleBarProps) {
             {dockerBadgeLabel()}
           </span>
         </Show>
+        <Show when={props.task.externalWorktree}>
+          <span style={badgeStyle(theme.accent)}>Imported</span>
+        </Show>
         <EditableText
           value={props.task.name}
           onCommit={(v) => updateTaskName(props.task.id, v)}

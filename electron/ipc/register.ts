@@ -38,6 +38,7 @@ import {
   getFileDiff,
   getFileDiffFromBranch,
   getWorktreeStatus,
+  listImportableWorktrees,
   commitAll,
   discardUncommitted,
   checkMergeStatus,
@@ -325,6 +326,10 @@ export function registerAllHandlers(win: BrowserWindow): void {
     validatePath(args.projectRoot, 'projectRoot');
     return getGitIgnoredDirs(args.projectRoot);
   });
+  ipcMain.handle(IPC.ListImportableWorktrees, (_e, args) => {
+    validatePath(args.projectRoot, 'projectRoot');
+    return listImportableWorktrees(args.projectRoot);
+  });
   ipcMain.handle(IPC.GetWorktreeStatus, (_e, args) => {
     validatePath(args.worktreePath, 'worktreePath');
     const baseBranch = args.baseBranch || undefined;
@@ -354,6 +359,8 @@ export function registerAllHandlers(win: BrowserWindow): void {
     assertOptionalBoolean(args.cleanup, 'cleanup');
     const baseBranch = args.baseBranch || undefined;
     if (baseBranch) validateBranchName(baseBranch, 'baseBranch');
+    const worktreePath = args.worktreePath || undefined;
+    if (worktreePath) validatePath(worktreePath, 'worktreePath');
     return mergeTask(
       args.projectRoot,
       args.branchName,
@@ -361,6 +368,7 @@ export function registerAllHandlers(win: BrowserWindow): void {
       args.message ?? null,
       args.cleanup ?? false,
       baseBranch,
+      worktreePath,
     );
   });
   ipcMain.handle(IPC.GetBranchLog, (_e, args) => {

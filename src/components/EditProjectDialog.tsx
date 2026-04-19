@@ -11,6 +11,7 @@ import { sanitizeBranchPrefix, toBranchName } from '../lib/branch-name';
 import { theme, sectionLabelStyle } from '../lib/theme';
 import type { Project, TerminalBookmark, GitIsolationMode } from '../store/types';
 import { SegmentedButtons } from './SegmentedButtons';
+import { ImportWorktreesDialog } from './ImportWorktreesDialog';
 
 interface EditProjectDialogProps {
   project: Project | null;
@@ -31,6 +32,7 @@ export function EditProjectDialog(props: EditProjectDialogProps) {
   const [defaultBaseBranch, setDefaultBaseBranch] = createSignal('');
   const [bookmarks, setBookmarks] = createSignal<TerminalBookmark[]>([]);
   const [newCommand, setNewCommand] = createSignal('');
+  const [showImportDialog, setShowImportDialog] = createSignal(false);
   let nameRef!: HTMLInputElement;
 
   // Sync signals when project prop changes
@@ -124,6 +126,22 @@ export function EditProjectDialog(props: EditProjectDialogProps) {
               >
                 {project().path}
               </div>
+              <button
+                type="button"
+                onClick={() => setShowImportDialog(true)}
+                style={{
+                  padding: '3px 10px',
+                  background: theme.bgInput,
+                  border: `1px solid ${theme.border}`,
+                  'border-radius': '6px',
+                  color: theme.fgMuted,
+                  cursor: 'pointer',
+                  'font-size': '11px',
+                  'flex-shrink': '0',
+                }}
+              >
+                Import Worktrees
+              </button>
               <button
                 type="button"
                 onClick={() => relinkProject(project().id)}
@@ -506,6 +524,11 @@ export function EditProjectDialog(props: EditProjectDialogProps) {
                 Save
               </button>
             </div>
+            <ImportWorktreesDialog
+              open={showImportDialog()}
+              project={project()}
+              onClose={() => setShowImportDialog(false)}
+            />
           </>
         )}
       </Show>
