@@ -108,6 +108,8 @@ export {
   setEditorCommand,
   setDockerImage,
   setDockerAvailable,
+  setAskCodeProvider,
+  setMinimaxApiKey,
   setWindowState,
 } from './ui';
 export {

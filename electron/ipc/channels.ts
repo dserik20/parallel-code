@@ -98,6 +98,7 @@ export enum IPC {
   // Ask about code
   AskAboutCode = 'ask_about_code',
   CancelAskAboutCode = 'cancel_ask_about_code',
+  SetMinimaxApiKey = 'set_minimax_api_key',
 
   // Setup / teardown commands (per-project, run on worktree create / remove)
   RunSetupCommands = 'run_setup_commands',
