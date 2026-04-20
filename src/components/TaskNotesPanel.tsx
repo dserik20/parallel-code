@@ -1,5 +1,11 @@
 import { Show, createSignal, createEffect, onMount } from 'solid-js';
-import { store, updateTaskNotes, setTaskFocusedPanel } from '../store/store';
+import {
+  store,
+  updateTaskNotes,
+  setTaskFocusedPanel,
+  sendPrompt,
+  isAgentAskingQuestion,
+} from '../store/store';
 import { ResizablePanel } from './ResizablePanel';
 import { ChangedFilesList } from './ChangedFilesList';
 import { CommitNavBar } from './CommitNavBar';
@@ -12,6 +18,7 @@ import type { CommitInfo } from '../ipc/types';
 
 interface TaskNotesPanelProps {
   task: Task;
+  agentId: string;
   isActive: boolean;
   commitList: CommitInfo[];
   selectedCommit: string | null;
@@ -22,6 +29,29 @@ interface TaskNotesPanelProps {
 
 export function TaskNotesPanel(props: TaskNotesPanelProps) {
   const [notesTab, setNotesTab] = createSignal<'notes' | 'plan'>('notes');
+  const [sendingNotes, setSendingNotes] = createSignal(false);
+
+  async function handleSendNotes() {
+    if (sendingNotes()) return;
+    const val = props.task.notes?.trim();
+    if (!val) return;
+    if (!props.agentId) return;
+    if (isAgentAskingQuestion(props.agentId)) return;
+    setSendingNotes(true);
+    try {
+      await sendPrompt(props.task.id, props.agentId, val);
+    } catch (e) {
+      console.error('Failed to send notes to prompt:', e);
+    } finally {
+      setSendingNotes(false);
+    }
+  }
+
+  const canSendNotes = () =>
+    !sendingNotes() &&
+    !!props.task.notes?.trim() &&
+    !!props.agentId &&
+    !isAgentAskingQuestion(props.agentId);
   const planHtml = createHighlightedMarkdown(() => props.task.planContent);
 
   // Auto-switch to plan tab when plan content first appears
@@ -127,24 +157,70 @@ export function TaskNotesPanel(props: TaskNotesPanelProps) {
               </Show>
 
               <Show when={notesTab() === 'notes' || !store.showPlans || !props.task.planContent}>
-                <textarea
-                  ref={(el) => (notesRef = el)}
-                  value={props.task.notes}
-                  onInput={(e) => updateTaskNotes(props.task.id, e.currentTarget.value)}
-                  placeholder="Notes..."
+                <div
                   style={{
-                    width: '100%',
                     flex: '1',
-                    background: theme.taskPanelBg,
-                    border: 'none',
-                    padding: '6px 8px',
-                    color: theme.fg,
-                    'font-size': sf(12),
-                    'font-family': "'JetBrains Mono', monospace",
-                    resize: 'none',
-                    outline: 'none',
+                    display: 'flex',
+                    'flex-direction': 'column',
+                    position: 'relative',
+                    'min-height': '0',
                   }}
-                />
+                >
+                  <textarea
+                    ref={(el) => (notesRef = el)}
+                    value={props.task.notes}
+                    onInput={(e) => updateTaskNotes(props.task.id, e.currentTarget.value)}
+                    placeholder="Notes..."
+                    style={{
+                      width: '100%',
+                      flex: '1',
+                      background: theme.taskPanelBg,
+                      border: 'none',
+                      padding: '6px 8px',
+                      color: theme.fg,
+                      'font-size': sf(12),
+                      'font-family': "'JetBrains Mono', monospace",
+                      resize: 'none',
+                      outline: 'none',
+                    }}
+                  />
+                  <button
+                    class="send-notes-btn"
+                    type="button"
+                    disabled={!canSendNotes()}
+                    onClick={() => void handleSendNotes()}
+                    title="Send notes as a prompt to the agent"
+                    aria-label="Send notes as a prompt to the agent"
+                    style={{
+                      position: 'absolute',
+                      bottom: '6px',
+                      right: '6px',
+                      width: '22px',
+                      height: '22px',
+                      padding: '0',
+                      display: 'flex',
+                      'align-items': 'center',
+                      'justify-content': 'center',
+                      background: `color-mix(in srgb, ${theme.accent} 12%, ${theme.bgInput})`,
+                      color: theme.fg,
+                      border: `1px solid color-mix(in srgb, ${theme.accent} 25%, ${theme.border})`,
+                      'border-radius': '50%',
+                      cursor: canSendNotes() ? 'pointer' : 'default',
+                      opacity: canSendNotes() ? '1' : '0.4',
+                      'z-index': '1',
+                    }}
+                  >
+                    <svg width="12" height="12" viewBox="0 0 14 14" fill="none">
+                      <path
+                        d="M7 2V12M7 12L3 8M7 12l4 -4"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      />
+                    </svg>
+                  </button>
+                </div>
               </Show>
 
               <Show when={notesTab() === 'plan' && store.showPlans && props.task.planContent}>

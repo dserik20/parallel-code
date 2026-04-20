@@ -234,6 +234,7 @@ export function TaskPanel(props: TaskPanelProps) {
       content: () => (
         <TaskNotesPanel
           task={props.task}
+          agentId={firstAgentId()}
           isActive={props.isActive}
           commitList={commitList()}
           selectedCommit={selectedCommit()}
