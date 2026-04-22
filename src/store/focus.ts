@@ -32,16 +32,14 @@ export function triggerAction(key: string): void {
   actionRegistry.get(key)?.();
 }
 
-// Grid-based spatial navigation. Two layouts:
+// Grid-based spatial navigation. Two task layouts:
 //  - vertical stack (default): everything in one column
 //  - split (focus mode, panel wide enough): ai-terminal/prompt anchor the left,
 //    changed-files/notes/steps/shell anchor the right, and `ai-terminal` is
-//    repeated down col 0 so ←/→ cross cleanly into the right column.
-// navigateRow skip-repeats past those duplicates; row-aware → uses
-// `lastRightColFocus` so bouncing ←→ over ai-terminal returns to the origin.
+//    repeated down col 0 so left/right crossings into the right column stay
+//    consistent.
 
-/** Cells that belong to the left column in split mode. Anything else is treated
- *  as right-column for `lastRightColFocus` memory and the dead-end fallback. */
+/** Cells that belong to the left column in split mode. */
 const LEFT_COL_PANELS = new Set(['title', 'ai-terminal', 'prompt', 'terminal']);
 
 function buildGrid(panelId: string): string[][] {
@@ -93,12 +91,8 @@ function buildGrid(panelId: string): string[][] {
   return [['title'], ['terminal']];
 }
 
-/** In split mode, pick the right-column cell to jump to when → from the left.
- *  Prefers the user's last right-column position (so ← then → round-trips),
- *  falls back to the top of the right column (changed-files / shell row). */
-function pickRightColumnTarget(taskId: string, grid: string[][]): string | null {
-  const remembered = store.lastRightColFocus[taskId];
-  if (remembered && findInGrid(grid, remembered)) return remembered;
+/** In split mode, find the first focusable panel in the right column. */
+function pickTopRightColumnTarget(grid: string[][]): string | null {
   for (const row of grid) {
     for (let c = 1; c < row.length; c++) {
       const cell = row[c];
@@ -134,11 +128,6 @@ export function setTaskFocusedPanel(taskId: string, panel: string): void {
   setStore('focusedPanel', taskId, panel);
   setStore('sidebarFocused', false);
   setStore('placeholderFocused', false);
-  // Remember right-column visits so → from ai-terminal can return to where the
-  // user was instead of always jumping to the top of the right column.
-  if (!LEFT_COL_PANELS.has(panel)) {
-    setStore('lastRightColFocus', taskId, panel);
-  }
   triggerFocus(`${taskId}:${panel}`);
   scrollTaskIntoView(taskId);
 }
@@ -275,15 +264,14 @@ export function navigateRow(direction: 'up' | 'down'): void {
   }
 
   // Dead-end: in split mode, ↓ from ai-terminal when no prompt/shells anchor
-  // the left column's bottom would otherwise stop — enter the right column
-  // (the ← from any right-col cell will come back to ai-terminal).
+  // the left column's bottom would otherwise stop — enter the top-right panel.
   if (
     direction === 'down' &&
     store.taskSplitMode[taskId] &&
     pos.col === 0 &&
     current === 'ai-terminal'
   ) {
-    const target = pickRightColumnTarget(taskId, grid);
+    const target = pickTopRightColumnTarget(grid);
     if (target) setTaskFocusedPanel(taskId, target);
   }
 }
@@ -338,16 +326,13 @@ export function navigateColumn(direction: 'left' | 'right'): void {
     setTaskFocusedPanel(taskId, fallback);
   }
 
-  // In split mode, → from ai-terminal is row-aware: go to the last right-column
-  // cell the user visited, not the first match in findInGrid (which always
-  // returned `changed-files` at row 1 regardless of where they came from).
   if (
     direction === 'right' &&
     pos.col === 0 &&
     current === 'ai-terminal' &&
     store.taskSplitMode[taskId]
   ) {
-    const target = pickRightColumnTarget(taskId, grid);
+    const target = pickTopRightColumnTarget(grid);
     if (target) {
       setTaskFocusedPanel(taskId, target);
       return;
@@ -356,8 +341,6 @@ export function navigateColumn(direction: 'left' | 'right'): void {
 
   const row = grid[pos.row];
   const nextCol = direction === 'left' ? pos.col - 1 : pos.col + 1;
-
-  // Within-row movement
   if (nextCol >= 0 && nextCol < row.length) {
     setTaskFocusedPanel(taskId, row[nextCol]);
     return;
