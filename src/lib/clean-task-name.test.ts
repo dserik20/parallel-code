@@ -6,6 +6,7 @@ import {
   cleanTaskName,
   displayTaskNameFromPrompt,
   isAutoTaskNameFromPrompt,
+  shouldUsePromptDerivedTaskName,
 } from './clean-task-name';
 
 describe('cleanTaskName', () => {
@@ -84,5 +85,26 @@ describe('isAutoTaskNameFromPrompt', () => {
         'please improve the task name generation so it keeps a little more detail before truncating',
       ),
     ).toBe(false);
+  });
+});
+
+describe('shouldUsePromptDerivedTaskName', () => {
+  const prompt =
+    'please improve the task name generation so it keeps a little more detail before truncating';
+
+  it('honors an explicit false flag after a manual rename', () => {
+    expect(
+      shouldUsePromptDerivedTaskName('improve the task name generation so it', prompt, false),
+    ).toBe(false);
+  });
+
+  it('honors an explicit true flag for newly auto-generated names', () => {
+    expect(shouldUsePromptDerivedTaskName('custom short name', prompt, true)).toBe(true);
+  });
+
+  it('falls back to prompt matching for legacy tasks without the flag', () => {
+    expect(shouldUsePromptDerivedTaskName('improve the task name generation so it', prompt)).toBe(
+      true,
+    );
   });
 });
