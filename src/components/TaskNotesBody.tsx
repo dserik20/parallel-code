@@ -74,6 +74,11 @@ export function TaskNotesBody(props: TaskNotesBodyProps) {
   return (
     <div
       class="focusable-panel"
+      data-panel-focused={
+        store.activeTaskId === props.task.id && store.focusedPanel[props.task.id] === 'notes'
+          ? 'true'
+          : 'false'
+      }
       style={{
         width: '100%',
         height: '100%',

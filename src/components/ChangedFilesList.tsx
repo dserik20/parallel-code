@@ -10,6 +10,7 @@ import type { ChangedFile } from '../ipc/types';
 interface ChangedFilesListProps {
   worktreePath: string;
   isActive?: boolean;
+  panelFocused?: boolean;
   onFileClick?: (file: ChangedFile) => void;
   ref?: (el: HTMLDivElement) => void;
   /** Project root for branch-based fallback when worktree doesn't exist */
@@ -215,6 +216,7 @@ export function ChangedFilesList(props: ChangedFilesListProps) {
     <div
       ref={props.ref}
       class="focusable-panel"
+      data-panel-focused={props.panelFocused ? 'true' : 'false'}
       tabIndex={0}
       onKeyDown={handleKeyDown}
       style={{

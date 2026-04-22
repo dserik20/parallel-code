@@ -111,6 +111,9 @@ export function TaskAITerminal(props: TaskAITerminalProps) {
     <>
       <div
         class="focusable-panel shell-terminal-container"
+        data-panel-focused={
+          props.isActive && store.focusedPanel[props.task.id] === 'ai-terminal' ? 'true' : 'false'
+        }
         data-shell-focused={store.focusedPanel[props.task.id] === 'ai-terminal' ? 'true' : 'false'}
         style={{
           height: '100%',

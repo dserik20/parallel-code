@@ -1,6 +1,7 @@
 import { batch } from 'solid-js';
 import { store, setStore } from './core';
 import { setActiveTask } from './navigation';
+import { setTaskFocusedPanel } from './focus';
 import type { LookPreset } from '../lib/look';
 import type { PersistedWindowState, TaskViewportVisibility } from './types';
 import { invoke } from '../lib/ipc';
@@ -119,8 +120,12 @@ export function toggleFocusMode(on?: boolean): void {
 
 export function toggleTaskFocusMode(taskId: string | null = store.activeTaskId): void {
   if (!taskId || !store.tasks[taskId]) return;
+  const enteringFocusMode = !store.focusMode;
   if (store.activeTaskId !== taskId) setActiveTask(taskId);
   toggleFocusMode();
+  if (!enteringFocusMode) return;
+  const panel = store.focusedPanel[taskId] ?? 'ai-terminal';
+  requestAnimationFrame(() => setTaskFocusedPanel(taskId, panel));
 }
 
 export function setTaskSplitMode(taskId: string, active: boolean): void {

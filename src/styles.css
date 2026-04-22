@@ -771,7 +771,8 @@ textarea::placeholder {
   position: relative;
 }
 
-.focusable-panel:focus-within::after {
+.focusable-panel:focus-within::after,
+.focusable-panel[data-panel-focused='true']::after {
   content: '';
   position: absolute;
   inset: 0;
@@ -782,12 +783,14 @@ textarea::placeholder {
 }
 
 /* Prompt input already has its own textarea focus treatment */
-.prompt-input-panel:focus-within::after {
+.prompt-input-panel:focus-within::after,
+.prompt-input-panel[data-panel-focused='true']::after {
   content: none;
 }
 
 /* Shell toolbar uses button-level focus states instead of container outline */
-.shell-toolbar-panel:focus-within::after {
+.shell-toolbar-panel:focus-within::after,
+.shell-toolbar-panel[data-panel-focused='true']::after {
   content: none;
 }
 

@@ -82,6 +82,12 @@ export function TaskShellSection(props: TaskShellSectionProps) {
           shellToolbarEl = el;
         }}
         class="focusable-panel shell-toolbar-panel"
+        data-panel-focused={
+          store.activeTaskId === props.task.id &&
+          store.focusedPanel[props.task.id]?.startsWith('shell-toolbar:')
+            ? 'true'
+            : 'false'
+        }
         tabIndex={0}
         onClick={() => setTaskFocusedPanel(props.task.id, `shell-toolbar:${shellToolbarIdx()}`)}
         onFocus={() => setShellToolbarFocused(true)}
@@ -183,6 +189,7 @@ export function TaskShellSection(props: TaskShellSectionProps) {
               return (
                 <div
                   class="focusable-panel shell-terminal-container"
+                  data-panel-focused={props.isActive && isShellFocused() ? 'true' : 'false'}
                   data-shell-focused={isShellFocused() ? 'true' : 'false'}
                   style={{
                     flex: '1',

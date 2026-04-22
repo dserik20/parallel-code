@@ -417,6 +417,11 @@ export function PromptInput(props: PromptInputProps) {
   return (
     <div
       class="focusable-panel prompt-input-panel"
+      data-panel-focused={
+        store.activeTaskId === props.taskId && store.focusedPanel[props.taskId] === 'prompt'
+          ? 'true'
+          : 'false'
+      }
       style={{ display: 'flex', height: '100%', padding: '4px 6px', 'border-radius': '12px' }}
     >
       <div style={{ position: 'relative', flex: '1', display: 'flex' }}>

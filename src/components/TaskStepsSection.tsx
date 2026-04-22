@@ -2,7 +2,7 @@ import { Show, For, createSignal, createMemo, createEffect, onCleanup, onMount }
 import { theme } from '../lib/theme';
 import { sf } from '../lib/fontScale';
 import { useFocusRegistration } from '../lib/focus-registration';
-import { setTaskFocusedPanel } from '../store/store';
+import { store, setTaskFocusedPanel } from '../store/store';
 import type { Task } from '../store/types';
 import type { StepEntry } from '../ipc/types';
 
@@ -354,6 +354,11 @@ export function TaskStepsSection(props: TaskStepsSectionProps) {
   return (
     <div
       class="focusable-panel"
+      data-panel-focused={
+        store.activeTaskId === props.task.id && store.focusedPanel[props.task.id] === 'steps'
+          ? 'true'
+          : 'false'
+      }
       style={{
         height: '100%',
         display: 'flex',

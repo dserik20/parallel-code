@@ -130,6 +130,9 @@ export function TerminalPanel(props: TerminalPanelProps) {
       {/* Terminal */}
       <div
         class="focusable-panel"
+        data-panel-focused={
+          props.isActive && store.focusedPanel[props.terminal.id] === 'terminal' ? 'true' : 'false'
+        }
         style={{
           height: '100%',
           position: 'relative',
