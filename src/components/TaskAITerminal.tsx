@@ -249,7 +249,7 @@ export function TaskAITerminal(props: TaskAITerminalProps) {
                       lastMarkedLen = firstJumpable;
                       props.onStepJumpReady?.(api.jump, firstJumpable);
                     }}
-                    fontSize={14}
+                    fontSize={13}
                   />
                 </Show>
               </>
