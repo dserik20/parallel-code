@@ -30,6 +30,7 @@ export function EditProjectDialog(props: EditProjectDialogProps) {
   const [deleteBranchOnClose, setDeleteBranchOnClose] = createSignal(true);
   const [defaultGitIsolation, setDefaultGitIsolation] = createSignal<GitIsolationMode>('worktree');
   const [defaultBaseBranch, setDefaultBaseBranch] = createSignal('');
+  const [coverageReportPath, setCoverageReportPath] = createSignal('');
   const [bookmarks, setBookmarks] = createSignal<TerminalBookmark[]>([]);
   const [newCommand, setNewCommand] = createSignal('');
   const [showImportDialog, setShowImportDialog] = createSignal(false);
@@ -45,6 +46,7 @@ export function EditProjectDialog(props: EditProjectDialogProps) {
     setDeleteBranchOnClose(p.deleteBranchOnClose ?? true);
     setDefaultGitIsolation(p.defaultGitIsolation ?? 'worktree');
     setDefaultBaseBranch(p.defaultBaseBranch ?? '');
+    setCoverageReportPath(p.coverageReportPath ?? '');
     setBookmarks(p.terminalBookmarks ? [...p.terminalBookmarks] : []);
     setNewCommand('');
     requestAnimationFrame(() => nameRef?.focus());
@@ -78,6 +80,7 @@ export function EditProjectDialog(props: EditProjectDialogProps) {
       deleteBranchOnClose: deleteBranchOnClose(),
       defaultGitIsolation: defaultGitIsolation(),
       defaultBaseBranch: defaultBaseBranch() || undefined,
+      coverageReportPath: coverageReportPath().trim() || undefined,
       terminalBookmarks: bookmarks(),
     });
     props.onClose();
@@ -384,6 +387,42 @@ export function EditProjectDialog(props: EditProjectDialogProps) {
                 />
               </div>
             </Show>
+
+            <div style={{ display: 'flex', 'flex-direction': 'column', gap: '8px' }}>
+              <label style={sectionLabelStyle}>
+                Coverage report path{' '}
+                <span style={{ opacity: '0.5', 'text-transform': 'none' }}>
+                  (relative to repo root)
+                </span>
+              </label>
+              <input
+                class="input-field"
+                type="text"
+                value={coverageReportPath()}
+                onInput={(e) => setCoverageReportPath(e.currentTarget.value)}
+                placeholder="coverage/coverage-summary.json or coverage/lcov.info"
+                style={{
+                  background: theme.bgInput,
+                  border: `1px solid ${theme.border}`,
+                  'border-radius': '8px',
+                  padding: '10px 14px',
+                  color: theme.fg,
+                  'font-size': '14px',
+                  'font-family': "'JetBrains Mono', monospace",
+                  outline: 'none',
+                }}
+              />
+              <div
+                style={{
+                  'font-size': '12px',
+                  color: theme.fgSubtle,
+                  padding: '2px 2px 0',
+                }}
+              >
+                Leave blank to try <code>coverage/coverage-summary.json</code>, then{' '}
+                <code>coverage/lcov.info</code>.
+              </div>
+            </div>
 
             {/* Command Bookmarks */}
             <div style={{ display: 'flex', 'flex-direction': 'column', gap: '8px' }}>

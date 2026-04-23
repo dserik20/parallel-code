@@ -1,5 +1,5 @@
 import { Show, onMount } from 'solid-js';
-import { store, setTaskFocusedPanel } from '../store/store';
+import { getProject, store, setTaskFocusedPanel } from '../store/store';
 import { ChangedFilesList } from './ChangedFilesList';
 import { CommitNavBar } from './CommitNavBar';
 import { theme } from '../lib/theme';
@@ -18,6 +18,7 @@ interface TaskChangedFilesSectionProps {
 }
 
 export function TaskChangedFilesSection(props: TaskChangedFilesSectionProps) {
+  const coverageReportPath = () => getProject(props.task.projectId)?.coverageReportPath;
   const selectedCommitInfo = () =>
     props.selectedCommit !== null && props.task.gitIsolation === 'worktree'
       ? props.commitList.find((c) => c.hash === props.selectedCommit)
@@ -97,6 +98,7 @@ export function TaskChangedFilesSection(props: TaskChangedFilesSectionProps) {
           baseBranch={props.task.baseBranch}
           isActive={props.isActive}
           panelFocused={props.isActive && store.focusedPanel[props.task.id] === 'changed-files'}
+          coverageReportPath={coverageReportPath()}
           selectedCommit={props.selectedCommit}
           onFileClick={(file) => props.onDiffFileClick(file.path)}
           ref={(el) => (changedFilesRef = el)}

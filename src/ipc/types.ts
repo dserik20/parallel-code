@@ -42,6 +42,29 @@ export interface ChangedFile {
   committed: boolean;
 }
 
+export interface CoverageMetricSummary {
+  total: number;
+  covered: number;
+  skipped: number;
+  pct: number;
+}
+
+export interface CoverageFileSummary {
+  path: string;
+  lines: CoverageMetricSummary;
+  statements: CoverageMetricSummary;
+  functions: CoverageMetricSummary;
+  branches: CoverageMetricSummary;
+}
+
+export interface CoverageSummary {
+  format: 'istanbul-summary' | 'lcov';
+  generatedAt: string;
+  reportPath: string;
+  totals: Omit<CoverageFileSummary, 'path'>;
+  files: Record<string, CoverageFileSummary>;
+}
+
 export interface WorktreeStatus {
   has_committed_changes: boolean;
   has_uncommitted_changes: boolean;

@@ -250,6 +250,12 @@ export async function loadState(): Promise<void> {
   // Also migrate defaultDirectMode -> defaultGitIsolation
   for (const p of projects) {
     if (!p.color) p.color = randomPastelColor();
+    if (typeof p.coverageReportPath === 'string') {
+      const trimmed = p.coverageReportPath.trim();
+      p.coverageReportPath = trimmed ? trimmed : undefined;
+    } else {
+      p.coverageReportPath = undefined;
+    }
     // Migrate defaultDirectMode -> defaultGitIsolation
     const legacy = p as Project & { defaultDirectMode?: boolean };
     if (legacy.defaultDirectMode !== undefined && p.defaultGitIsolation === undefined) {

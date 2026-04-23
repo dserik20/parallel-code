@@ -5,7 +5,7 @@ import { theme } from '../lib/theme';
 import { sf } from '../lib/fontScale';
 import { getStatusColor } from '../lib/status-colors';
 import { buildFileTree, flattenVisibleTree } from '../lib/file-tree';
-import type { ChangedFile } from '../ipc/types';
+import type { ChangedFile, CoverageFileSummary, CoverageSummary } from '../ipc/types';
 
 interface ChangedFilesListProps {
   worktreePath: string;
@@ -13,6 +13,8 @@ interface ChangedFilesListProps {
   panelFocused?: boolean;
   onFileClick?: (file: ChangedFile) => void;
   ref?: (el: HTMLDivElement) => void;
+  /** Optional coverage artifact path relative to the repo root. */
+  coverageReportPath?: string;
   /** Project root for branch-based fallback when worktree doesn't exist */
   projectRoot?: string;
   /** Branch name for branch-based fallback when worktree doesn't exist */
@@ -23,14 +25,152 @@ interface ChangedFilesListProps {
   selectedCommit?: string | null;
 }
 
+const SOURCE_FILE_RE = /\.(?:[cm]?[jt]sx?)$/i;
+const TEST_FILE_RE = /\.(?:test|spec)\.(?:[cm]?[jt]sx?)$/i;
+
+export function isCoverageEligible(file: ChangedFile): boolean {
+  return (
+    file.status !== 'D' &&
+    SOURCE_FILE_RE.test(file.path) &&
+    !TEST_FILE_RE.test(file.path) &&
+    !file.path.endsWith('.d.ts')
+  );
+}
+
+export function coverageFooterLabel(
+  hasCoverageArtifact: boolean,
+  touchedCoveragePct: number | null,
+  hasMatchedCoverage: boolean,
+): string {
+  if (!hasCoverageArtifact) return '⊘';
+  if (hasMatchedCoverage && touchedCoveragePct === null) return '◌';
+  if (touchedCoveragePct === null) return '∅';
+  return `◔ ${touchedCoveragePct}%`;
+}
+
+export function filesFooterLabel(fileCount: number, uncommittedCount: number): string {
+  return uncommittedCount > 0 ? `▤ ${fileCount}·${uncommittedCount}u` : `▤ ${fileCount}`;
+}
+
+export function filesFooterTitle(fileCount: number, uncommittedCount: number): string {
+  return uncommittedCount > 0
+    ? `${fileCount} changed files, ${uncommittedCount} uncommitted.`
+    : `${fileCount} changed files.`;
+}
+
+export function coverageFooterTitle(
+  coverageSummary: CoverageSummary | null,
+  touchedCoveragePct: number | null,
+  hasMatchedCoverage: boolean,
+): string {
+  if (!coverageSummary) {
+    return 'Run coverage and write either coverage/coverage-summary.json, coverage/lcov.info, or the configured project report path.';
+  }
+  if (hasMatchedCoverage && touchedCoveragePct === null) {
+    return `${coverageSummary.format === 'lcov' ? 'LCOV' : 'Coverage summary'} loaded, but the matched changed files had no executable lines to measure.`;
+  }
+  if (touchedCoveragePct === null) {
+    return `${coverageSummary.format === 'lcov' ? 'LCOV' : 'Coverage summary'} loaded, but none of the changed eligible files matched entries in the report.`;
+  }
+  return `${coverageSummary.format === 'lcov' ? 'LCOV' : 'Coverage summary'} updated ${coverageSummary.generatedAt ?? 'unknown time'}`;
+}
+
+function coverageColor(pct: number): string {
+  if (pct >= 80) return theme.success;
+  if (pct >= 60) return theme.warning;
+  return theme.error;
+}
+
+function coverageBadgeTitle(summary: CoverageFileSummary): string {
+  return `Lines ${summary.lines.pct}% · Branches ${summary.branches.pct}% · Functions ${summary.functions.pct}% · Statements ${summary.statements.pct}%`;
+}
+
+function FileCoverageBadge(props: {
+  file: ChangedFile;
+  selectedCommit?: string | null;
+  summary?: CoverageFileSummary;
+  hasCoverageArtifact: boolean;
+}) {
+  const isEligible = () => !props.selectedCommit && isCoverageEligible(props.file);
+  const summary = () => (isEligible() ? props.summary : undefined);
+
+  return (
+    <>
+      <Show when={summary()} keyed>
+        {(coverageSummary) => (
+          <span
+            title={coverageBadgeTitle(coverageSummary)}
+            style={{
+              color: coverageColor(coverageSummary.lines.pct),
+              'font-size': sf(10),
+              'flex-shrink': '0',
+              padding: '1px 5px',
+              'border-radius': '999px',
+              border: `1px solid color-mix(in srgb, ${coverageColor(coverageSummary.lines.pct)} 30%, transparent)`,
+              background: `color-mix(in srgb, ${coverageColor(coverageSummary.lines.pct)} 12%, transparent)`,
+            }}
+          >
+            {coverageSummary.lines.pct}%
+          </span>
+        )}
+      </Show>
+      <Show when={props.hasCoverageArtifact && isEligible() && !props.summary}>
+        <span
+          title="No recent coverage data for this source file. Run npm run test:coverage to populate the radar."
+          style={{
+            color: theme.error,
+            'font-size': sf(10),
+            'flex-shrink': '0',
+            padding: '1px 5px',
+            'border-radius': '999px',
+            border: `1px solid color-mix(in srgb, ${theme.error} 30%, transparent)`,
+            background: `color-mix(in srgb, ${theme.error} 10%, transparent)`,
+          }}
+        >
+          no cov
+        </span>
+      </Show>
+    </>
+  );
+}
+
 export function ChangedFilesList(props: ChangedFilesListProps) {
   const [files, setFiles] = createSignal<ChangedFile[]>([]);
+  const [coverage, setCoverage] = createSignal<CoverageSummary | null>(null);
   const [selectedIndex, setSelectedIndex] = createSignal(-1);
   const [collapsed, setCollapsed] = createSignal<Set<string>>(new Set());
   const rowRefs: HTMLDivElement[] = [];
 
   const tree = createMemo(() => buildFileTree(files()));
   const visibleRows = createMemo(() => flattenVisibleTree(tree(), collapsed()));
+  const coverageFiles = createMemo(() => coverage()?.files ?? {});
+  const hasCoverageArtifact = createMemo(() => coverage() !== null);
+  const eligibleFiles = createMemo(() => files().filter((file) => isCoverageEligible(file)));
+  const coveredEligibleFiles = createMemo(() =>
+    eligibleFiles().filter((file) => Boolean(coverageFiles()[file.path])),
+  );
+  const hasMatchedCoverage = createMemo(() => coveredEligibleFiles().length > 0);
+  const missingCoverageCount = createMemo(() =>
+    hasCoverageArtifact() ? eligibleFiles().length - coveredEligibleFiles().length : 0,
+  );
+  const lowCoverageCount = createMemo(
+    () =>
+      coveredEligibleFiles().filter((file) => (coverageFiles()[file.path]?.lines.pct ?? 0) < 60)
+        .length,
+  );
+  const touchedCoveragePct = createMemo(() => {
+    const covered = coveredEligibleFiles();
+    let totalLines = 0;
+    let coveredLines = 0;
+    for (const file of covered) {
+      const summary = coverageFiles()[file.path];
+      if (!summary) continue;
+      totalLines += summary.lines.total;
+      coveredLines += summary.lines.covered;
+    }
+    if (totalLines === 0) return null;
+    return Math.round((coveredLines / totalLines) * 100);
+  });
 
   function toggleDir(path: string) {
     const isCollapsing = !collapsed().has(path);
@@ -209,6 +349,41 @@ export function ChangedFilesList(props: ChangedFilesListProps) {
     });
   });
 
+  createEffect(() => {
+    const repoRoot = props.worktreePath;
+    const commitHash = props.selectedCommit;
+    if (!repoRoot || commitHash) {
+      setCoverage(null);
+      return;
+    }
+    if (!props.isActive) return;
+    let cancelled = false;
+    let inFlight = false;
+
+    async function refresh() {
+      if (inFlight) return;
+      inFlight = true;
+      try {
+        const result = await invoke<CoverageSummary | null>(IPC.GetCoverageSummary, {
+          repoRoot,
+          reportPath: props.coverageReportPath,
+        });
+        if (!cancelled) setCoverage(result);
+      } catch {
+        if (!cancelled) setCoverage(null);
+      } finally {
+        inFlight = false;
+      }
+    }
+
+    void refresh();
+    const timer = setInterval(() => void refresh(), 5000);
+    onCleanup(() => {
+      cancelled = true;
+      clearInterval(timer);
+    });
+  });
+
   const totalAdded = createMemo(() => files().reduce((s, f) => s + f.lines_added, 0));
   const totalRemoved = createMemo(() => files().reduce((s, f) => s + f.lines_removed, 0));
   const uncommittedCount = createMemo(() => files().filter((f) => !f.committed).length);
@@ -329,6 +504,16 @@ export function ChangedFilesList(props: ChangedFilesListProps) {
                   >
                     {row().node.name}
                   </span>
+                  <Show when={row().node.file} keyed>
+                    {(file) => (
+                      <FileCoverageBadge
+                        file={file}
+                        selectedCommit={props.selectedCommit}
+                        summary={coverageFiles()[row().node.path]}
+                        hasCoverageArtifact={hasCoverageArtifact()}
+                      />
+                    )}
+                  </Show>
                   <Show
                     when={
                       (row().node.file?.lines_added ?? 0) > 0 ||
@@ -357,12 +542,91 @@ export function ChangedFilesList(props: ChangedFilesListProps) {
             'flex-shrink': '0',
           }}
         >
-          {files().length} files, <span style={{ color: theme.success }}>+{totalAdded()}</span>{' '}
-          <span style={{ color: theme.error }}>-{totalRemoved()}</span>
-          <Show when={uncommittedCount() > 0}>
-            {' '}
-            <span style={{ color: theme.warning }}>({uncommittedCount()} uncommitted)</span>
-          </Show>
+          <div
+            style={{
+              display: 'flex',
+              'align-items': 'center',
+              gap: '8px',
+              'justify-content': 'flex-end',
+              'flex-wrap': 'wrap',
+            }}
+          >
+            <Show when={!props.selectedCommit && eligibleFiles().length > 0}>
+              <div
+                style={{
+                  display: 'flex',
+                  'align-items': 'center',
+                  gap: '6px',
+                  'margin-right': 'auto',
+                }}
+              >
+                <Show when={touchedCoveragePct() !== null}>
+                  <span
+                    title={coverageFooterTitle(
+                      coverage(),
+                      touchedCoveragePct(),
+                      hasMatchedCoverage(),
+                    )}
+                    style={{
+                      color: coverageColor(touchedCoveragePct() ?? 0),
+                      'font-weight': '600',
+                    }}
+                  >
+                    {coverageFooterLabel(
+                      hasCoverageArtifact(),
+                      touchedCoveragePct(),
+                      hasMatchedCoverage(),
+                    )}
+                  </span>
+                </Show>
+                <Show when={touchedCoveragePct() === null}>
+                  <span
+                    title={coverageFooterTitle(
+                      coverage(),
+                      touchedCoveragePct(),
+                      hasMatchedCoverage(),
+                    )}
+                  >
+                    {coverageFooterLabel(
+                      hasCoverageArtifact(),
+                      touchedCoveragePct(),
+                      hasMatchedCoverage(),
+                    )}
+                  </span>
+                </Show>
+                <Show when={lowCoverageCount() > 0}>
+                  <span
+                    title={`${lowCoverageCount()} changed file${lowCoverageCount() === 1 ? '' : 's'} below 60% line coverage.`}
+                    style={{ color: theme.warning, 'font-weight': '600' }}
+                  >
+                    △ {lowCoverageCount()}
+                  </span>
+                </Show>
+                <Show when={missingCoverageCount() > 0}>
+                  <span
+                    title={`${missingCoverageCount()} changed file${missingCoverageCount() === 1 ? '' : 's'} missing from the loaded coverage report.`}
+                    style={{ color: theme.error, 'font-weight': '600' }}
+                  >
+                    ∅ {missingCoverageCount()}
+                  </span>
+                </Show>
+              </div>
+            </Show>
+            <div style={{ display: 'flex', 'align-items': 'center', gap: '6px' }}>
+              <span
+                title={filesFooterTitle(files().length, uncommittedCount())}
+                style={{ color: uncommittedCount() > 0 ? theme.warning : theme.fgMuted }}
+              >
+                {filesFooterLabel(files().length, uncommittedCount())}
+              </span>
+              <span title={`${totalAdded()} added lines`} style={{ color: theme.success }}>
+                +{totalAdded()}
+              </span>
+              <span title={`${totalRemoved()} removed lines`} style={{ color: theme.error }}>
+                -{totalRemoved()}
+              </span>
+            </div>
+          </div>
         </div>
       </Show>
     </div>

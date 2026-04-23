@@ -3,6 +3,7 @@ dist
 dist-electron
 dist-remote
 release
+coverage
 .worktrees
 .idea
 .claude

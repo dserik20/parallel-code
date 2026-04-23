@@ -24,6 +24,8 @@ export interface Project {
   deleteBranchOnClose?: boolean; // default true if unset
   defaultGitIsolation?: GitIsolationMode;
   defaultBaseBranch?: string;
+  /** Coverage artifact path relative to the repo root. */
+  coverageReportPath?: string;
   terminalBookmarks?: TerminalBookmark[];
   isGitRepo?: boolean; // undefined treated as true for backward compat
 }

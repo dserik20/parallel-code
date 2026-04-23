@@ -27,6 +27,7 @@ import {
 } from './plans.js';
 import { startStepsWatcher, stopStepsWatcher, readStepsForWorktree } from './steps.js';
 import { initPrChecks, startPrChecksWatcher, stopPrChecksWatcher, isPrUrl } from './pr-checks.js';
+import { readCoverageSummary } from './coverage.js';
 import { startRemoteServer } from '../remote/server.js';
 import {
   getGitIgnoredDirs,
@@ -394,6 +395,13 @@ export function registerAllHandlers(win: BrowserWindow): void {
     validatePath(args.worktreePath, 'worktreePath');
     validateCommitHash(args.commitHash, 'commitHash');
     return getCommitDiffs(args.worktreePath, args.commitHash);
+  });
+  ipcMain.handle(IPC.GetCoverageSummary, (_e, args) => {
+    validatePath(args.repoRoot, 'repoRoot');
+    assertOptionalString(args.reportPath, 'reportPath');
+    const reportPath = args.reportPath?.trim() || undefined;
+    if (reportPath) validateRelativePath(reportPath, 'reportPath');
+    return readCoverageSummary(args.repoRoot, reportPath);
   });
   ipcMain.handle(IPC.PushTask, (_e, args) => {
     validatePath(args.projectRoot, 'projectRoot');

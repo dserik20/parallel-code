@@ -64,6 +64,7 @@ export function updateProject(
       | 'deleteBranchOnClose'
       | 'defaultGitIsolation'
       | 'defaultBaseBranch'
+      | 'coverageReportPath'
       | 'terminalBookmarks'
       | 'isGitRepo'
     >
@@ -81,8 +82,10 @@ export function updateProject(
         s.projects[idx].deleteBranchOnClose = updates.deleteBranchOnClose;
       if (updates.defaultGitIsolation !== undefined)
         s.projects[idx].defaultGitIsolation = updates.defaultGitIsolation;
-      if (updates.defaultBaseBranch !== undefined)
+      if (Object.prototype.hasOwnProperty.call(updates, 'defaultBaseBranch'))
         s.projects[idx].defaultBaseBranch = updates.defaultBaseBranch;
+      if (Object.prototype.hasOwnProperty.call(updates, 'coverageReportPath'))
+        s.projects[idx].coverageReportPath = updates.coverageReportPath;
       if (updates.terminalBookmarks !== undefined)
         s.projects[idx].terminalBookmarks = updates.terminalBookmarks;
       if (updates.isGitRepo !== undefined) s.projects[idx].isGitRepo = updates.isGitRepo;

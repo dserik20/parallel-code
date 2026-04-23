@@ -1,7 +1,7 @@
 import { Show, For, createSignal, createResource, createEffect } from 'solid-js';
 import { invoke } from '../lib/ipc';
 import { IPC } from '../../electron/ipc/channels';
-import { store, mergeTask, sendPrompt, updateTaskBranch } from '../store/store';
+import { store, getProject, mergeTask, sendPrompt, updateTaskBranch } from '../store/store';
 import { ConfirmDialog } from './ConfirmDialog';
 import { ChangedFilesList } from './ChangedFilesList';
 import { theme, bannerStyle } from '../lib/theme';
@@ -397,6 +397,7 @@ export function MergeDialog(props: MergeDialogProps) {
               isActive={props.open}
               onFileClick={props.onDiffFileClick}
               baseBranch={props.task.baseBranch}
+              coverageReportPath={getProject(props.task.projectId)?.coverageReportPath}
             />
           </div>
           {/* Imported worktrees are user-owned — never offer to delete them or their branch. */}
