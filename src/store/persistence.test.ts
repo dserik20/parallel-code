@@ -52,4 +52,33 @@ describe('resolveIncomingPanelUserSize', () => {
     );
     expect(result).toEqual({ 'tiling:p': 480 });
   });
+
+  it('rejects records containing non-finite numbers (NaN / Infinity)', () => {
+    // NaN and Infinity survive JSON.parse through custom reviver or hand edits
+    // — tighter validation here prevents them from becoming `flex: 0 0 NaNpx`.
+    const result = resolveIncomingPanelUserSize(
+      { 'tiling:a': Number.NaN, 'tiling:b': 200 },
+      undefined,
+      true,
+    );
+    expect(result).toEqual({});
+  });
+
+  it('rejects records containing negative or absurdly large values', () => {
+    expect(resolveIncomingPanelUserSize({ 'tiling:a': -5 }, undefined, true)).toEqual({});
+    expect(resolveIncomingPanelUserSize({ 'tiling:a': 1_000_000 }, undefined, true)).toEqual({});
+  });
+
+  it('keeps reasonable pixel values through the validator', () => {
+    const result = resolveIncomingPanelUserSize(
+      { 'tiling:a': 0, 'sidebar:width': 240, 'tiling:b': 15_000 },
+      undefined,
+      true,
+    );
+    expect(result).toEqual({
+      'tiling:a': 0,
+      'sidebar:width': 240,
+      'tiling:b': 15_000,
+    });
+  });
 });

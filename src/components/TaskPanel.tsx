@@ -272,7 +272,7 @@ export function TaskPanel(props: TaskPanelProps) {
 
   // PanelChild wrappers. Flex-first layout means each child declares only
   // what it needs (id, minSize for drag floor); the tree picks one child per
-  // ResizablePanel to be the flex absorber via `absorberId`.
+  // ResizablePanel to be the flex absorber via `absorberIds`.
 
   const stepsSectionChild: PanelChild = {
     id: 'steps-section',
@@ -301,7 +301,7 @@ export function TaskPanel(props: TaskPanelProps) {
   const isNoneGit = () => props.task.gitIsolation === 'none';
 
   // Notes and changed-files children reused across stack and split trees.
-  // In the stack-mode inner horizontal split, notes absorbs (absorberId below).
+  // In the stack-mode inner horizontal split, both children absorb (50/50 default).
   // In the split-right vertical tree, both are content-sized and shell absorbs.
   const notesChild: PanelChild = {
     id: 'notes',
@@ -329,7 +329,7 @@ export function TaskPanel(props: TaskPanelProps) {
           <ResizablePanel
             direction="horizontal"
             persistKey={`task:${props.task.id}:notes-split`}
-            absorberId={['notes', 'changed-files']}
+            absorberIds={['notes', 'changed-files']}
             children={[notesChild, changedFilesChild]}
           />
         )}
@@ -381,7 +381,7 @@ export function TaskPanel(props: TaskPanelProps) {
             <ResizablePanel
               direction="vertical"
               persistKey={`task:${props.task.id}`}
-              absorberId="ai-terminal"
+              absorberIds={['ai-terminal']}
               children={[
                 notesAndFilesChild,
                 shellSectionChild,
@@ -395,7 +395,7 @@ export function TaskPanel(props: TaskPanelProps) {
           <ResizablePanel
             direction="horizontal"
             persistKey={`task:${props.task.id}:split-cols`}
-            absorberId="left-col"
+            absorberIds={['left-col']}
             children={[
               {
                 id: 'left-col',
@@ -404,7 +404,7 @@ export function TaskPanel(props: TaskPanelProps) {
                   <ResizablePanel
                     direction="vertical"
                     persistKey={`task:${props.task.id}:split-left`}
-                    absorberId="ai-terminal"
+                    absorberIds={['ai-terminal']}
                     children={[
                       aiTerminalChild,
                       ...(store.showPromptInput ? [promptInputChild] : []),
@@ -419,7 +419,7 @@ export function TaskPanel(props: TaskPanelProps) {
                   <ResizablePanel
                     direction="vertical"
                     persistKey={`task:${props.task.id}:split-right`}
-                    absorberId="shell-section"
+                    absorberIds={['shell-section']}
                     children={[
                       ...(isNoneGit() ? [] : [changedFilesChild]),
                       notesChild,

@@ -1,4 +1,5 @@
 import {
+  batch,
   Show,
   For,
   createMemo,
@@ -128,13 +129,17 @@ export function TilingLayout() {
     if (!containerRef) return;
     const handleWheel = createCtrlShiftWheelResizeHandler((deltaPx) => {
       if (store.focusMode) return;
-      for (const child of panelChildren()) {
-        if (child.fixed) continue;
-        const current = sizeFor(child);
-        const min = child.minSize ?? 30;
-        const max = child.maxSize ?? Infinity;
-        setPanelUserSize(`tiling:${child.id}`, Math.min(max, Math.max(min, current + deltaPx)));
-      }
+      // Single batch so every consumer of `panelUserSize` (each panel wrapper)
+      // re-runs once per wheel tick instead of once per modified key.
+      batch(() => {
+        for (const child of panelChildren()) {
+          if (child.fixed) continue;
+          const current = sizeFor(child);
+          const min = child.minSize ?? 30;
+          const max = child.maxSize ?? Infinity;
+          setPanelUserSize(`tiling:${child.id}`, Math.min(max, Math.max(min, current + deltaPx)));
+        }
+      });
       requestAnimationFrame(() => updateViewportState());
     });
     let scrollRafPending = false;

@@ -76,14 +76,22 @@ type CleanupPanelStore = Pick<
 >;
 
 /** Remove panelUserSize, focusedPanel, and taskOrder entries for a given ID.
- *  Call inside a `produce` callback. Returns the index the item had in taskOrder. */
+ *  Call inside a `produce` callback. Returns the index the item had in taskOrder.
+ *
+ *  Panel entries live under three key shapes for a given task/terminal:
+ *    - `${id}` / `${id}:*`                     (legacy / bare-id tree)
+ *    - `task:${id}` / `task:${id}:*`           (TaskPanel nested trees)
+ *    - `tiling:${id}`                          (TilingLayout horizontal strip)
+ *  All three are scrubbed so closed items don't leak persistent state. */
 export function cleanupPanelEntries(s: CleanupPanelStore, id: string): number {
   const idx = s.taskOrder.indexOf(id);
   delete s.focusedPanel[id];
   delete s.taskSplitMode[id];
-  const prefix = id + ':';
+  const prefixes = [id, `task:${id}`, `tiling:${id}`];
   for (const key of Object.keys(s.panelUserSize)) {
-    if (key === id || key.startsWith(prefix)) delete s.panelUserSize[key];
+    if (prefixes.some((p) => key === p || key.startsWith(`${p}:`))) {
+      delete s.panelUserSize[key];
+    }
   }
   s.taskOrder = s.taskOrder.filter((x) => x !== id);
   s.collapsedTaskOrder = s.collapsedTaskOrder.filter((x) => x !== id);

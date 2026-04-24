@@ -140,10 +140,15 @@ export async function saveState(): Promise<void> {
   );
 }
 
+/** 20_000 px is ~10× the largest plausible monitor axis and big enough to let
+ *  a user pin a panel anywhere reasonable; anything larger points at a
+ *  corrupted / hand-edited state file and we drop the record. */
+const MAX_PANEL_PX = 20_000;
+
 function isStringNumberRecord(v: unknown): v is Record<string, number> {
   if (typeof v !== 'object' || v === null || Array.isArray(v)) return false;
   return Object.values(v as Record<string, unknown>).every(
-    (val) => typeof val === 'number' && Number.isFinite(val),
+    (val) => typeof val === 'number' && Number.isFinite(val) && val >= 0 && val <= MAX_PANEL_PX,
   );
 }
 
