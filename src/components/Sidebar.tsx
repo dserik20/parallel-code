@@ -17,8 +17,8 @@ import {
   unfocusSidebar,
   setTaskFocusedPanel,
   getTaskFocusedPanel,
-  getPanelSize,
-  setPanelSizes,
+  getPanelUserSize,
+  setPanelUserSize,
   toggleSettingsDialog,
   uncollapseTask,
   isProjectMissing,
@@ -97,7 +97,7 @@ export function Sidebar() {
   const [resizing, setResizing] = createSignal(false);
   let taskListRef: HTMLDivElement | undefined;
 
-  const sidebarWidth = () => getPanelSize(SIDEBAR_SIZE_KEY) ?? SIDEBAR_DEFAULT_WIDTH;
+  const sidebarWidth = () => getPanelUserSize(SIDEBAR_SIZE_KEY) ?? SIDEBAR_DEFAULT_WIDTH;
   const taskIndexById = createMemo(() => {
     const map = new Map<string, number>();
     store.taskOrder.forEach((taskId, idx) => map.set(taskId, idx));
@@ -115,7 +115,7 @@ export function Sidebar() {
         SIDEBAR_MIN_WIDTH,
         Math.min(SIDEBAR_MAX_WIDTH, startWidth + ev.clientX - startX),
       );
-      setPanelSizes({ [SIDEBAR_SIZE_KEY]: newWidth });
+      setPanelUserSize(SIDEBAR_SIZE_KEY, newWidth);
     }
 
     function onUp() {

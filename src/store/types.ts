@@ -130,7 +130,10 @@ export interface PersistedState {
   terminals?: Record<string, PersistedTerminal>;
   activeTaskId: string | null;
   sidebarVisible: boolean;
-  panelSizes?: Record<string, number>;
+  panelUserSize?: Record<string, number>;
+  /** Marks that panelUserSize has been migrated past v1-style flex-weight
+   *  values. Absent = pre-v2 data, wipe task:* entries on load. */
+  panelUserSizeMigratedV2?: boolean;
   globalScale?: number;
   completedTaskDate?: string;
   completedTaskCount?: number;
@@ -188,7 +191,10 @@ export interface AppStore {
   customAgents: AgentDef[];
   showNewTaskDialog: boolean;
   sidebarVisible: boolean;
-  panelSizes: Record<string, number>;
+  /** User-dragged sizes keyed by `${persistKey}:${childId}`. Presence of an
+   *  entry means that panel is pinned; absence means it's content-sized or
+   *  flex-absorbing. */
+  panelUserSize: Record<string, number>;
   globalScale: number;
   taskGitStatus: Record<string, WorktreeStatus>;
   taskViewportVisibility: Record<string, TaskViewportVisibility>;

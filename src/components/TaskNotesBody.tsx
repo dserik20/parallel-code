@@ -71,6 +71,11 @@ export function TaskNotesBody(props: TaskNotesBodyProps) {
     });
   });
 
+  // Intrinsic height the flex-first panel tree uses when the notes panel
+  // isn't pinned. Focus mode defaults to a roomy 240 px so a user who just
+  // entered focus mode sees meaningful space for notes without dragging.
+  const intrinsicHeight = () => (store.focusMode ? '240px' : '140px');
+
   return (
     <div
       class="focusable-panel"
@@ -82,6 +87,8 @@ export function TaskNotesBody(props: TaskNotesBodyProps) {
       style={{
         width: '100%',
         height: '100%',
+        'min-height': intrinsicHeight(),
+        'max-height': store.focusMode ? '40vh' : undefined,
         display: 'flex',
         'flex-direction': 'column',
       }}

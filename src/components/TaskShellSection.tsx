@@ -70,10 +70,24 @@ export function TaskShellSection(props: TaskShellSectionProps) {
 
   const hasShell = () => props.task.shellAgentIds.length > 0;
 
+  // Intrinsic height the flex-first panel tree will size this panel to when
+  // it isn't pinned. Empty state collapses to the 28 px toolbar; active state
+  // defaults to 200 px in stack mode and scales up in focus mode so the
+  // terminal has room when it takes over the screen.
+  const intrinsicHeight = () => {
+    if (!hasShell()) return '28px';
+    if (store.focusMode) return 'max(200px, 33vh)';
+    return '200px';
+  };
+
   return (
     <div
       style={{
+        // `height: 100%` fills the wrapper when flex assigns one (absorber in
+        // split-right); `min-height` provides the content size otherwise so
+        // `flex: 0 0 auto` can pick a sensible default.
         height: '100%',
+        'min-height': intrinsicHeight(),
         display: 'flex',
         'flex-direction': 'column',
         background: 'transparent',

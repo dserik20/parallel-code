@@ -40,7 +40,8 @@ export async function saveState(): Promise<void> {
     tasks: {},
     activeTaskId: store.activeTaskId,
     sidebarVisible: store.sidebarVisible,
-    panelSizes: { ...store.panelSizes },
+    panelUserSize: { ...store.panelUserSize },
+    panelUserSizeMigratedV2: true,
     globalScale: store.globalScale,
     completedTaskDate: store.completedTaskDate,
     completedTaskCount: store.completedTaskCount,
@@ -146,6 +147,29 @@ function isStringNumberRecord(v: unknown): v is Record<string, number> {
   );
 }
 
+/** Resolve the incoming panelUserSize table and apply the v2 migration.
+ *
+ * Accepts either the new `panelUserSize` field or the legacy `panelSizes`
+ * fallback. When the v2 migration flag is absent (pre-v2 / in-progress v2
+ * builds), every `task:*` entry is dropped because v1 stored flex-weights
+ * mixed with pixels under those keys — re-interpreting them as pixel pins
+ * produces visibly broken layouts. `tiling:*` and `sidebar:*` pins were
+ * always real pixels, so they pass through untouched.
+ */
+export function resolveIncomingPanelUserSize(
+  rawPanelUserSize: unknown,
+  rawPanelSizes: unknown,
+  migratedV2: unknown,
+): Record<string, number> {
+  const incoming = isStringNumberRecord(rawPanelUserSize)
+    ? rawPanelUserSize
+    : isStringNumberRecord(rawPanelSizes)
+      ? rawPanelSizes
+      : {};
+  if (migratedV2 === true) return incoming;
+  return Object.fromEntries(Object.entries(incoming).filter(([k]) => !k.startsWith('task:')));
+}
+
 function parsePersistedWindowState(v: unknown): PersistedWindowState | null {
   if (!v || typeof v !== 'object' || Array.isArray(v)) return null;
 
@@ -192,6 +216,9 @@ interface LegacyPersistedState {
   activeTaskId: string | null;
   sidebarVisible: boolean;
   // Fields that may be present in newer state files (validated at runtime)
+  panelUserSize?: unknown;
+  panelUserSizeMigratedV2?: unknown;
+  /** Legacy field name — accepted on load as pins, never written on save. */
   panelSizes?: unknown;
   globalScale?: unknown;
   completedTaskDate?: unknown;
@@ -291,7 +318,11 @@ export async function loadState(): Promise<void> {
       s.taskOrder = raw.taskOrder;
       s.activeTaskId = raw.activeTaskId;
       s.sidebarVisible = raw.sidebarVisible;
-      s.panelSizes = isStringNumberRecord(raw.panelSizes) ? raw.panelSizes : {};
+      s.panelUserSize = resolveIncomingPanelUserSize(
+        raw.panelUserSize,
+        raw.panelSizes,
+        raw.panelUserSizeMigratedV2,
+      );
       s.globalScale = typeof raw.globalScale === 'number' ? raw.globalScale : 1;
       const completedTaskDate =
         typeof raw.completedTaskDate === 'string' ? raw.completedTaskDate : today;

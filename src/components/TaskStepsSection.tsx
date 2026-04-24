@@ -60,7 +60,6 @@ interface TaskStepsSectionProps {
   task: Task;
   isActive: boolean;
   onFileClick?: (file: string) => void;
-  onNaturalHeight?: (h: number) => void;
   /** Scroll the AI terminal to the moment a given step index was recorded.
    *  Only steps marked since the terminal mounted are jumpable — historical
    *  steps (written before this session) have no marker and can't be located. */
@@ -285,7 +284,6 @@ export function TaskStepsSection(props: TaskStepsSectionProps) {
   const [hoveredHistory, setHoveredHistory] = createSignal<number | null>(null);
   const [latestHovered, setLatestHovered] = createSignal<'summary' | 'detail' | null>(null);
   let scrollRef!: HTMLDivElement;
-  const [latestCardRef, setLatestCardRef] = createSignal<HTMLDivElement | undefined>();
 
   onMount(() => {
     useFocusRegistration(`${props.task.id}:steps`, () => scrollRef?.focus());
@@ -314,29 +312,6 @@ export function TaskStepsSection(props: TaskStepsSectionProps) {
     if (len > 0 && scrollRef) {
       scrollRef.scrollTop = scrollRef.scrollHeight;
     }
-  });
-
-  const reportHeight = () => {
-    const el = latestCardRef();
-    if (!el) return;
-    const indicatorH = isInteracting() ? 28 : 0;
-    props.onNaturalHeight?.(el.offsetHeight + indicatorH + 24);
-  };
-
-  createEffect(() => {
-    // Re-measure when the step content, interaction state, or card ref changes.
-    latestStep();
-    isInteracting();
-    latestCardRef();
-    reportHeight();
-  });
-
-  createEffect(() => {
-    const el = latestCardRef();
-    if (!el) return;
-    const ro = new ResizeObserver(() => reportHeight());
-    ro.observe(el);
-    onCleanup(() => ro.disconnect());
   });
 
   function toggleHistory(originalIndex: number) {
@@ -610,7 +585,6 @@ export function TaskStepsSection(props: TaskStepsSectionProps) {
               const indented = () => Boolean(step().agent_id);
               return (
                 <div
-                  ref={setLatestCardRef}
                   style={{
                     'border-radius': '6px',
                     padding: '6px 10px 8px',

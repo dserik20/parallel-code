@@ -5,6 +5,7 @@ type MockStore = {
   focusMode: boolean;
   tasks: Record<string, { id: string }>;
   focusedPanel: Record<string, string>;
+  panelUserSize: Record<string, number>;
 };
 
 let mockStore: MockStore;
@@ -35,6 +36,12 @@ vi.mock('solid-js', () => ({
   batch: (fn: () => void) => fn(),
 }));
 
+// Real Solid produce uses Proxy mutation tracking; for the mock, a thin
+// pass-through is enough because our store slices are plain objects.
+vi.mock('solid-js/store', () => ({
+  produce: (fn: (draft: unknown) => void) => fn,
+}));
+
 vi.mock('./core', () => ({
   store: new Proxy(
     {},
@@ -44,7 +51,16 @@ vi.mock('./core', () => ({
       },
     },
   ),
-  setStore: vi.fn((...args: unknown[]) => setStorePath(...args)),
+  setStore: vi.fn((...args: unknown[]) => {
+    // Produce-style: setStore('key', produceFn) — run the producer on the slice.
+    if (args.length === 2 && typeof args[1] === 'function') {
+      const key = args[0] as keyof MockStore;
+      const producer = args[1] as (draft: unknown) => void;
+      producer(mockStore[key]);
+      return;
+    }
+    setStorePath(...args);
+  }),
 }));
 
 vi.mock('./navigation', () => ({
@@ -63,7 +79,7 @@ vi.mock('../../electron/ipc/channels', () => ({
   IPC: {},
 }));
 
-import { toggleTaskFocusMode } from './ui';
+import { toggleTaskFocusMode, getPanelUserSize, setPanelUserSize, deletePanelUserSize } from './ui';
 
 beforeEach(() => {
   mockStore = {
@@ -74,6 +90,7 @@ beforeEach(() => {
       'task-2': { id: 'task-2' },
     },
     focusedPanel: {},
+    panelUserSize: {},
   };
 
   vi.stubGlobal('requestAnimationFrame', (cb: FrameRequestCallback) => {
@@ -122,5 +139,40 @@ describe('toggleTaskFocusMode', () => {
     expect(mocks.setActiveTask).toHaveBeenCalledWith('task-2');
     expect(mockStore.activeTaskId).toBe('task-2');
     expect(mocks.setTaskFocusedPanel).toHaveBeenCalledWith('task-2', 'changed-files');
+  });
+});
+
+describe('panelUserSize', () => {
+  it('round-trips set and get', () => {
+    setPanelUserSize('task:abc:prompt', 150);
+    expect(getPanelUserSize('task:abc:prompt')).toBe(150);
+  });
+
+  it('returns undefined for unset keys', () => {
+    expect(getPanelUserSize('never-set')).toBeUndefined();
+  });
+
+  it('overwrites an existing entry', () => {
+    setPanelUserSize('k', 100);
+    setPanelUserSize('k', 220);
+    expect(getPanelUserSize('k')).toBe(220);
+  });
+
+  it('deletes multiple keys in one call and leaves others intact', () => {
+    setPanelUserSize('a', 100);
+    setPanelUserSize('b', 200);
+    setPanelUserSize('c', 300);
+
+    deletePanelUserSize(['a', 'c']);
+
+    expect(getPanelUserSize('a')).toBeUndefined();
+    expect(getPanelUserSize('b')).toBe(200);
+    expect(getPanelUserSize('c')).toBeUndefined();
+  });
+
+  it('is a no-op when called with an empty key list', () => {
+    setPanelUserSize('keep', 42);
+    expect(() => deletePanelUserSize([])).not.toThrow();
+    expect(getPanelUserSize('keep')).toBe(42);
   });
 });

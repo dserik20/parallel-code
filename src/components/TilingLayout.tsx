@@ -15,11 +15,10 @@ import {
   closeTerminal,
   setTaskViewportVisibility,
   taskNeedsAttention,
-  getPanelSize,
-  setPanelSizes,
+  getPanelUserSize,
+  setPanelUserSize,
 } from '../store/store';
 import { closeTask } from '../store/tasks';
-import type { PanelChild } from './ResizablePanel';
 import { TaskPanel } from './TaskPanel';
 import { TerminalPanel } from './TerminalPanel';
 import { NewTaskPlaceholder } from './NewTaskPlaceholder';
@@ -30,6 +29,19 @@ import { createCtrlShiftWheelResizeHandler } from '../lib/wheelZoom';
 
 const VIEWPORT_EPSILON_PX = 4;
 
+/** Tiling-layout top-level child. Distinct from `PanelChild` because this
+ *  layout owns its own horizontal drag model — fixed placeholders, per-panel
+ *  min/max widths, pixel-precise persisted sizes — that doesn't map onto the
+ *  flex-first ResizablePanel semantics. */
+interface TileChild {
+  id: string;
+  initialSize?: number;
+  minSize?: number;
+  maxSize?: number;
+  fixed?: boolean;
+  content: () => JSX.Element;
+}
+
 export function TilingLayout() {
   let containerRef: HTMLDivElement | undefined;
   const [hasOverflowLeft, setHasOverflowLeft] = createSignal(false);
@@ -39,10 +51,10 @@ export function TilingLayout() {
   // store.panelSizes on mouseup. Keeps autosave's snapshot stable mid-drag.
   const [dragPreview, setDragPreview] = createSignal<Record<string, number>>({});
 
-  function sizeFor(child: PanelChild): number {
+  function sizeFor(child: TileChild): number {
     const preview = dragPreview()[child.id];
     if (preview !== undefined) return preview;
-    const saved = getPanelSize(`tiling:${child.id}`);
+    const saved = getPanelUserSize(`tiling:${child.id}`);
     if (saved !== undefined) return saved;
     return child.initialSize ?? 200;
   }
@@ -116,15 +128,13 @@ export function TilingLayout() {
     if (!containerRef) return;
     const handleWheel = createCtrlShiftWheelResizeHandler((deltaPx) => {
       if (store.focusMode) return;
-      const entries: Record<string, number> = {};
       for (const child of panelChildren()) {
         if (child.fixed) continue;
         const current = sizeFor(child);
         const min = child.minSize ?? 30;
         const max = child.maxSize ?? Infinity;
-        entries[`tiling:${child.id}`] = Math.min(max, Math.max(min, current + deltaPx));
+        setPanelUserSize(`tiling:${child.id}`, Math.min(max, Math.max(min, current + deltaPx)));
       }
-      setPanelSizes(entries);
       requestAnimationFrame(() => updateViewportState());
     });
     let scrollRafPending = false;
@@ -199,11 +209,11 @@ export function TilingLayout() {
     if (terminal) markDirty(terminal.agentId);
   });
 
-  // Cache PanelChild objects by ID so <For> sees stable references
+  // Cache TileChild objects by ID so <For> sees stable references
   // and doesn't unmount/remount panels when taskOrder changes.
-  const panelCache = new Map<string, PanelChild>();
+  const panelCache = new Map<string, TileChild>();
 
-  const panelChildren = createMemo((): PanelChild[] => {
+  const panelChildren = createMemo((): TileChild[] => {
     const currentIds = new Set<string>(store.taskOrder);
     currentIds.add('__placeholder');
 
@@ -212,7 +222,7 @@ export function TilingLayout() {
       if (!currentIds.has(key)) panelCache.delete(key);
     }
 
-    const panels: PanelChild[] = store.taskOrder.map((panelId) => {
+    const panels: TileChild[] = store.taskOrder.map((panelId) => {
       let cached = panelCache.get(panelId);
       if (!cached) {
         cached = {
@@ -358,7 +368,7 @@ export function TilingLayout() {
     function onUp() {
       setDragging(null);
       setDragPreview({});
-      setPanelSizes({ [key]: latest });
+      setPanelUserSize(key, latest);
       window.removeEventListener('mousemove', onMove);
       window.removeEventListener('mouseup', onUp);
     }

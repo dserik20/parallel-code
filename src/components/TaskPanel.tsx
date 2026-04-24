@@ -55,7 +55,6 @@ export function TaskPanel(props: TaskPanelProps) {
   const [commitList, setCommitList] = createSignal<CommitInfo[]>([]);
   const [selectedCommit, setSelectedCommit] = createSignal<string | null>(null);
   const [editingProjectId, setEditingProjectId] = createSignal<string | null>(null);
-  const [stepsNaturalHeight, setStepsNaturalHeight] = createSignal(110);
   // Jump-to-step state is a single signal so ↗ can be hidden entirely before
   // TerminalView is ready (otherwise firstIndex would default to 0, showing ↗
   // on every step while `jump` is still undefined and every click no-ops).
@@ -71,8 +70,8 @@ export function TaskPanel(props: TaskPanelProps) {
   // Hysteresis: enter at >=1200, leave at <1150. A single threshold flickers
   // when the user drags the window edge across it, and every flip remounts the
   // xterm terminal inside the left column.
-  const SPLIT_ENTER_WIDTH = 1200;
-  const SPLIT_EXIT_WIDTH = 1150;
+  const SPLIT_ENTER_WIDTH = 1080;
+  const SPLIT_EXIT_WIDTH = 1030;
   const [panelWidth, setPanelWidth] = createSignal(0);
   const [useSplit, setUseSplit] = createSignal(false);
   createEffect(() => {
@@ -237,7 +236,6 @@ export function TaskPanel(props: TaskPanelProps) {
       task={props.task}
       isActive={props.isActive}
       onFileClick={(file) => setDiffScrollTarget(file)}
-      onNaturalHeight={setStepsNaturalHeight}
       firstJumpableIndex={stepNav()?.firstIndex}
       onJumpToStep={
         stepNav()
@@ -250,8 +248,13 @@ export function TaskPanel(props: TaskPanelProps) {
       }
     />
   );
+  // Prompt wrapper carries its own intrinsic height so the flex-first panel
+  // tree sizes it to 72 px by default and lets a user-drag pin override.
   const promptInputEl = (
-    <div onClick={() => setTaskFocusedPanel(props.task.id, 'prompt')} style={{ height: '100%' }}>
+    <div
+      onClick={() => setTaskFocusedPanel(props.task.id, 'prompt')}
+      style={{ height: '100%', 'min-height': '72px' }}
+    >
       <PromptInput
         taskId={props.task.id}
         agentId={firstAgentId()}
@@ -267,28 +270,19 @@ export function TaskPanel(props: TaskPanelProps) {
     </div>
   );
 
-  // PanelChild wrappers — stable references so ResizablePanel's <For> reuses
-  // entries (and therefore the DOM inside them) across re-evaluations.
+  // PanelChild wrappers. Flex-first layout means each child declares only
+  // what it needs (id, minSize for drag floor); the tree picks one child per
+  // ResizablePanel to be the flex absorber via `absorberId`.
 
   const stepsSectionChild: PanelChild = {
     id: 'steps-section',
-    initialSize: 28,
     minSize: 28,
-    get fixed() {
-      return !props.task.stepsContent?.length;
-    },
-    requestSize: stepsNaturalHeight,
     content: () => stepsSectionEl,
   };
 
   const shellSectionChild: PanelChild = {
     id: 'shell-section',
-    initialSize: 40,
     minSize: 28,
-    get fixed() {
-      return props.task.shellAgentIds.length === 0;
-    },
-    requestSize: () => (props.task.shellAgentIds.length > 0 ? 200 : 40),
     content: () => shellSectionEl,
   };
 
@@ -300,51 +294,47 @@ export function TaskPanel(props: TaskPanelProps) {
 
   const promptInputChild: PanelChild = {
     id: 'prompt',
-    initialSize: 72,
-    stable: true,
     minSize: 54,
-    maxSize: 300,
     content: () => promptInputEl,
   };
 
-  // Stack-mode inner horizontal split: notes on the left, changed-files on the right.
-  // Non-git tasks only get the notes panel (no changed-files split).
   const isNoneGit = () => props.task.gitIsolation === 'none';
-  const stackNotesSplitChildren = (): PanelChild[] =>
-    isNoneGit()
-      ? [{ id: 'notes', initialSize: 200, minSize: 100, content: () => notesBodyEl }]
-      : [
-          { id: 'notes', initialSize: 200, minSize: 100, content: () => notesBodyEl },
-          { id: 'changed-files', initialSize: 200, minSize: 100, content: () => changedFilesEl },
-        ];
-  const notesAndFilesChild: PanelChild = {
-    id: 'notes-files',
-    initialSize: 150,
-    minSize: 60,
-    content: () =>
-      isNoneGit() ? (
-        notesBodyEl
-      ) : (
-        <ResizablePanel
-          direction="horizontal"
-          persistKey={`task:${props.task.id}:notes-split`}
-          children={stackNotesSplitChildren()}
-        />
-      ),
+
+  // Notes and changed-files children reused across stack and split trees.
+  // In the stack-mode inner horizontal split, notes absorbs (absorberId below).
+  // In the split-right vertical tree, both are content-sized and shell absorbs.
+  const notesChild: PanelChild = {
+    id: 'notes',
+    minSize: 100,
+    content: () => notesBodyEl,
   };
 
-  // Split-mode right-column children.
-  const splitChangedFilesChild: PanelChild = {
+  const changedFilesChild: PanelChild = {
     id: 'changed-files',
-    initialSize: 200,
-    minSize: 80,
+    minSize: 100,
     content: () => changedFilesEl,
   };
-  const splitNotesBodyChild: PanelChild = {
-    id: 'notes-body',
-    initialSize: 200,
-    minSize: 80,
-    content: () => notesBodyEl,
+
+  // Stack-mode row containing notes (absorbs horizontally) and changed files.
+  // The inline 200 px floor prevents the nested horizontal panel from collapsing
+  // when the outer flex-first tree asks for content-size.
+  const notesAndFilesChild: PanelChild = {
+    id: 'notes-files',
+    minSize: 60,
+    content: () => (
+      <div style={{ height: '100%', 'min-height': '200px' }}>
+        {isNoneGit() ? (
+          notesBodyEl
+        ) : (
+          <ResizablePanel
+            direction="horizontal"
+            persistKey={`task:${props.task.id}:notes-split`}
+            absorberId={['notes', 'changed-files']}
+            children={[notesChild, changedFilesChild]}
+          />
+        )}
+      </div>
+    ),
   };
 
   return (
@@ -391,6 +381,7 @@ export function TaskPanel(props: TaskPanelProps) {
             <ResizablePanel
               direction="vertical"
               persistKey={`task:${props.task.id}`}
+              absorberId="ai-terminal"
               children={[
                 notesAndFilesChild,
                 shellSectionChild,
@@ -404,15 +395,16 @@ export function TaskPanel(props: TaskPanelProps) {
           <ResizablePanel
             direction="horizontal"
             persistKey={`task:${props.task.id}:split-cols`}
+            absorberId="left-col"
             children={[
               {
                 id: 'left-col',
-                initialSize: 800,
                 minSize: 420,
                 content: () => (
                   <ResizablePanel
                     direction="vertical"
                     persistKey={`task:${props.task.id}:split-left`}
+                    absorberId="ai-terminal"
                     children={[
                       aiTerminalChild,
                       ...(store.showPromptInput ? [promptInputChild] : []),
@@ -422,15 +414,15 @@ export function TaskPanel(props: TaskPanelProps) {
               },
               {
                 id: 'right-col',
-                initialSize: 400,
-                minSize: 280,
+                minSize: 360,
                 content: () => (
                   <ResizablePanel
                     direction="vertical"
                     persistKey={`task:${props.task.id}:split-right`}
+                    absorberId="shell-section"
                     children={[
-                      ...(isNoneGit() ? [] : [splitChangedFilesChild]),
-                      splitNotesBodyChild,
+                      ...(isNoneGit() ? [] : [changedFilesChild]),
+                      notesChild,
                       ...(props.task.stepsEnabled ? [stepsSectionChild] : []),
                       shellSectionChild,
                     ]}

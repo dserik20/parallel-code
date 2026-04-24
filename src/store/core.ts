@@ -18,7 +18,7 @@ export const [store, setStore] = createStore<AppStore>({
   customAgents: [],
   showNewTaskDialog: false,
   sidebarVisible: true,
-  panelSizes: {},
+  panelUserSize: {},
   globalScale: 1,
   taskGitStatus: {},
   taskViewportVisibility: {},
@@ -72,18 +72,18 @@ export const [store, setStore] = createStore<AppStore>({
 
 type CleanupPanelStore = Pick<
   AppStore,
-  'focusedPanel' | 'panelSizes' | 'taskOrder' | 'collapsedTaskOrder' | 'taskSplitMode'
+  'focusedPanel' | 'panelUserSize' | 'taskOrder' | 'collapsedTaskOrder' | 'taskSplitMode'
 >;
 
-/** Remove panelSizes, focusedPanel, and taskOrder entries for a given ID.
+/** Remove panelUserSize, focusedPanel, and taskOrder entries for a given ID.
  *  Call inside a `produce` callback. Returns the index the item had in taskOrder. */
 export function cleanupPanelEntries(s: CleanupPanelStore, id: string): number {
   const idx = s.taskOrder.indexOf(id);
   delete s.focusedPanel[id];
   delete s.taskSplitMode[id];
   const prefix = id + ':';
-  for (const key of Object.keys(s.panelSizes)) {
-    if (key === id || key.startsWith(prefix)) delete s.panelSizes[key];
+  for (const key of Object.keys(s.panelUserSize)) {
+    if (key === id || key.startsWith(prefix)) delete s.panelUserSize[key];
   }
   s.taskOrder = s.taskOrder.filter((x) => x !== id);
   s.collapsedTaskOrder = s.collapsedTaskOrder.filter((x) => x !== id);

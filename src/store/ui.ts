@@ -1,4 +1,5 @@
 import { batch } from 'solid-js';
+import { produce } from 'solid-js/store';
 import { store, setStore } from './core';
 import { setActiveTask } from './navigation';
 import { setTaskFocusedPanel } from './focus';
@@ -28,17 +29,29 @@ export function resetGlobalScale(): void {
   setStore('globalScale', 1);
 }
 
-// --- Panel Sizes ---
+// --- Panel User Sizes ---
+//
+// Presence of an entry means the user dragged the panel to that pixel size;
+// absence means the panel falls back to its content-sized or flex-absorber
+// default. No separate "manual" flag — the entry itself is the pin.
 
-export function getPanelSize(key: string): number | undefined {
-  return store.panelSizes[key];
+export function getPanelUserSize(key: string): number | undefined {
+  return store.panelUserSize[key];
 }
 
-export function setPanelSizes(entries: Record<string, number>): void {
+export function setPanelUserSize(key: string, px: number): void {
+  setStore('panelUserSize', key, px);
+}
+
+export function deletePanelUserSize(keys: string[]): void {
+  if (keys.length === 0) return;
   batch(() => {
-    for (const [key, value] of Object.entries(entries)) {
-      setStore('panelSizes', key, value);
-    }
+    setStore(
+      'panelUserSize',
+      produce((sizes: Record<string, number>) => {
+        for (const key of keys) delete sizes[key];
+      }),
+    );
   });
 }
 
