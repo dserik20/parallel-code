@@ -178,23 +178,6 @@ async function remoteTrackingRefExists(repoRoot: string, branch: string): Promis
   }
 }
 
-/**
- * Resolve a branch name to the ref to use as a diff base.
- *
- * Prefers `origin/<branch>` when the remote-tracking ref exists because local
- * branches are often stale (users fetch without pulling), and worktrees are
- * usually branched off the latest origin state. Without this, `git merge-base
- * main HEAD` resolves `main` to stale `refs/heads/main`, producing a merge-base
- * older than the worktree's actual branch point — so the diff leaks the
- * origin/main-vs-main delta into the feature branch's changes.
- */
-async function resolveBaseRef(repoRoot: string, branch: string): Promise<string> {
-  if (await remoteTrackingRefExists(repoRoot, branch)) {
-    return `origin/${branch}`;
-  }
-  return branch;
-}
-
 /** Check whether a local branch ref exists. */
 async function localBranchExists(repoRoot: string, branch: string): Promise<boolean> {
   try {
@@ -255,6 +238,71 @@ async function getCurrentBranchName(repoRoot: string): Promise<string> {
   return stdout.trim();
 }
 
+/**
+ * Pick the merge-base SHA closest to HEAD between local `<branch>` and
+ * `origin/<branch>`.
+ *
+ * Either ref can be stale relative to the other: local can be ahead of origin
+ * (the user merged a PR locally without pushing) or origin can be ahead of
+ * local (the user fetched without pulling). Whichever ref's merge-base with
+ * HEAD is a *descendant* of the other's is the more recent branch point and
+ * gives the smallest correct diff. When neither merge-base is an ancestor of
+ * the other (the two refs have themselves diverged), the local merge-base is
+ * preferred — origin can carry teammate work the user has not seen yet.
+ *
+ * Returns null when neither ref exists or both merge-base lookups fail.
+ */
+async function pickMergeBase(
+  repoRoot: string,
+  branch: string,
+  head: string,
+): Promise<string | null> {
+  const [hasLocal, hasOrigin] = await Promise.all([
+    localBranchExists(repoRoot, branch),
+    remoteTrackingRefExists(repoRoot, branch),
+  ]);
+
+  if (!hasLocal && !hasOrigin) return null;
+
+  const mergeBaseFor = async (ref: string): Promise<string | null> => {
+    try {
+      const { stdout } = await exec('git', ['merge-base', ref, head], { cwd: repoRoot });
+      return stdout.trim() || null;
+    } catch {
+      return null;
+    }
+  };
+
+  const [localMb, originMb] = await Promise.all([
+    hasLocal ? mergeBaseFor(branch) : Promise.resolve(null),
+    hasOrigin ? mergeBaseFor(`origin/${branch}`) : Promise.resolve(null),
+  ]);
+
+  if (!localMb && !originMb) return null;
+  if (!localMb) return originMb;
+  if (!originMb) return localMb;
+  if (localMb === originMb) return localMb;
+
+  const isAncestor = async (anc: string, desc: string): Promise<boolean> => {
+    try {
+      await exec('git', ['merge-base', '--is-ancestor', anc, desc], { cwd: repoRoot });
+      return true;
+    } catch {
+      return false;
+    }
+  };
+
+  if (await isAncestor(originMb, localMb)) return localMb;
+  if (await isAncestor(localMb, originMb)) return originMb;
+  return localMb;
+}
+
+/**
+ * Resolve the diff base SHA for `head` against `baseBranch` (or the detected
+ * main branch). Delegates ref-picking to `pickMergeBase`; falls back to
+ * `headRef` when no candidate ref resolves so callers diff against themselves
+ * (empty diff) rather than against the branch tip.
+ */
 async function detectMergeBase(
   repoRoot: string,
   head?: string,
@@ -269,20 +317,12 @@ async function detectMergeBase(
     mergeBaseCache.delete(key);
   }
 
-  try {
-    const baseRef = await resolveBaseRef(repoRoot, branch);
-    const { stdout } = await exec('git', ['merge-base', baseRef, headRef], { cwd: repoRoot });
-    const result = stdout.trim();
-    if (result) {
-      mergeBaseCache.set(key, { value: result, expiresAt: Date.now() + MERGE_BASE_TTL });
-      return result;
-    }
-  } catch {
-    /* branch may not resolve */
+  const picked = await pickMergeBase(repoRoot, branch, headRef);
+  if (picked) {
+    mergeBaseCache.set(key, { value: picked, expiresAt: Date.now() + MERGE_BASE_TTL });
+    return picked;
   }
 
-  // Fall back to headRef so callers diff HEAD against itself (empty diff)
-  // rather than diffing against the branch tip.
   return headRef;
 }
 
@@ -435,8 +475,8 @@ async function computeBranchDiffStats(
   mainBranch: string,
   branchName: string,
 ): Promise<{ linesAdded: number; linesRemoved: number }> {
-  const baseRef = await resolveBaseRef(projectRoot, mainBranch);
-  const { stdout } = await exec('git', ['diff', '--numstat', `${baseRef}...${branchName}`], {
+  const base = await detectMergeBase(projectRoot, branchName, mainBranch);
+  const { stdout } = await exec('git', ['diff', '--numstat', base, branchName], {
     cwd: projectRoot,
     maxBuffer: MAX_BUFFER,
   });
@@ -941,9 +981,9 @@ export async function getAllFileDiffsFromBranch(
   baseBranch?: string,
 ): Promise<string> {
   const mainBranch = baseBranch ?? (await detectMainBranch(projectRoot));
-  const baseRef = await resolveBaseRef(projectRoot, mainBranch);
+  const base = await detectMergeBase(projectRoot, branchName, mainBranch);
   try {
-    const { stdout } = await exec('git', ['diff', '-U3', `${baseRef}...${branchName}`], {
+    const { stdout } = await exec('git', ['diff', '-U3', base, branchName], {
       cwd: projectRoot,
       maxBuffer: MAX_BUFFER,
     });
@@ -1345,15 +1385,14 @@ export async function getChangedFilesFromBranch(
   baseBranch?: string,
 ): Promise<ChangedFile[]> {
   const mainBranch = baseBranch ?? (await detectMainBranch(projectRoot));
-  const baseRef = await resolveBaseRef(projectRoot, mainBranch);
+  const base = await detectMergeBase(projectRoot, branchName, mainBranch);
 
   let diffStr = '';
   try {
-    const { stdout } = await exec(
-      'git',
-      ['diff', '--raw', '--numstat', `${baseRef}...${branchName}`],
-      { cwd: projectRoot, maxBuffer: MAX_BUFFER },
-    );
+    const { stdout } = await exec('git', ['diff', '--raw', '--numstat', base, branchName], {
+      cwd: projectRoot,
+      maxBuffer: MAX_BUFFER,
+    });
     diffStr = stdout;
   } catch {
     return [];
@@ -1385,11 +1424,11 @@ export async function getFileDiffFromBranch(
   baseBranch?: string,
 ): Promise<FileDiffResult> {
   const mainBranch = baseBranch ?? (await detectMainBranch(projectRoot));
-  const baseRef = await resolveBaseRef(projectRoot, mainBranch);
+  const base = await detectMergeBase(projectRoot, branchName, mainBranch);
 
   let diff = '';
   try {
-    const { stdout } = await exec('git', ['diff', `${baseRef}...${branchName}`, '--', filePath], {
+    const { stdout } = await exec('git', ['diff', base, branchName, '--', filePath], {
       cwd: projectRoot,
       maxBuffer: MAX_BUFFER,
     });
@@ -1398,20 +1437,9 @@ export async function getFileDiffFromBranch(
     /* empty */
   }
 
-  // Find the merge base for content retrieval
-  let mergeBase = baseRef;
-  try {
-    const { stdout } = await exec('git', ['merge-base', baseRef, branchName], {
-      cwd: projectRoot,
-    });
-    if (stdout.trim()) mergeBase = stdout.trim();
-  } catch {
-    /* use baseRef as fallback */
-  }
-
   let oldContent = '';
   try {
-    const { stdout } = await exec('git', ['show', `${mergeBase}:${filePath}`], {
+    const { stdout } = await exec('git', ['show', `${base}:${filePath}`], {
       cwd: projectRoot,
       maxBuffer: MAX_BUFFER,
     });

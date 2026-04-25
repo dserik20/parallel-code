@@ -69,7 +69,81 @@ function setupMock(calls: string[][], handler: MockHandler): void {
   vi.mocked(execFile).mockImplementation(impl as unknown as typeof execFile);
 }
 
-describe('baseBranch fallback to detectMainBranch', () => {
+// Unique repo paths per test so the module-level mergeBaseCache and
+// mainBranchCache (keyed by repoRoot) do not bleed state across tests.
+let repoCounter = 0;
+function uniqueRepoPath(): string {
+  return `/repo-${++repoCounter}`;
+}
+
+const SHA_LOCAL = 'sha000local';
+const SHA_ORIGIN = 'sha000origin';
+
+interface FromBranchMockOpts {
+  branch: string;
+  hasLocal?: boolean;
+  hasOrigin?: boolean;
+  localMb?: string;
+  originMb?: string;
+  // Outcome of `merge-base --is-ancestor <originMb> <localMb>` (origin's mb
+  // is an ancestor of local's mb → local mb is closer to HEAD).
+  originIsAncestorOfLocal?: boolean;
+  // Outcome of `merge-base --is-ancestor <localMb> <originMb>`.
+  localIsAncestorOfOrigin?: boolean;
+}
+
+/** Mock handler for getXxxFromBranch tests covering pickMergeBase paths. */
+function fromBranchMockHandler(opts: FromBranchMockOpts): MockHandler {
+  const hasLocal = opts.hasLocal ?? true;
+  const hasOrigin = opts.hasOrigin ?? true;
+  return (args, cb) => {
+    if (args[0] === 'rev-parse' && args[1] === '--verify') {
+      const ref = args[2];
+      if (ref === `refs/heads/${opts.branch}`) {
+        return cb(hasLocal ? null : new Error('no local'), 'exists\n', '');
+      }
+      if (ref === `refs/remotes/origin/${opts.branch}`) {
+        return cb(hasOrigin ? null : new Error('no remote'), 'exists\n', '');
+      }
+      return cb(new Error('unexpected ref'), '', '');
+    }
+    if (args[0] === 'symbolic-ref') {
+      return cb(new Error('no origin HEAD'), '', '');
+    }
+    if (args[0] === 'merge-base') {
+      if (args[1] === '--is-ancestor') {
+        const anc = args[2];
+        const desc = args[3];
+        if (anc === opts.originMb && desc === opts.localMb) {
+          return cb(opts.originIsAncestorOfLocal ? null : new Error('no'), '', '');
+        }
+        if (anc === opts.localMb && desc === opts.originMb) {
+          return cb(opts.localIsAncestorOfOrigin ? null : new Error('no'), '', '');
+        }
+        return cb(new Error('unexpected ancestor pair'), '', '');
+      }
+      const ref = args[1];
+      if (ref === opts.branch) {
+        if (opts.localMb === undefined) return cb(new Error('failed'), '', '');
+        return cb(null, opts.localMb + '\n', '');
+      }
+      if (ref === `origin/${opts.branch}`) {
+        if (opts.originMb === undefined) return cb(new Error('failed'), '', '');
+        return cb(null, opts.originMb + '\n', '');
+      }
+      return cb(new Error('unknown ref'), '', '');
+    }
+    if (args[0] === 'diff') {
+      return cb(null, '', '');
+    }
+    if (args[0] === 'show') {
+      return cb(new Error('not found'), '', '');
+    }
+    return cb(new Error(`unhandled ${args.join(' ')}`), '', '');
+  };
+}
+
+describe('from-branch diff helpers (pickMergeBase wiring)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -77,104 +151,268 @@ describe('baseBranch fallback to detectMainBranch', () => {
   describe('getAllFileDiffsFromBranch', () => {
     it('falls back to detected main branch when baseBranch is undefined', async () => {
       const calls: string[][] = [];
-      setupMock(calls, (argsArr, cb) => {
-        const isDiff = argsArr[0] === 'diff';
-        cb(isDiff ? null : new Error('no remote'), '', '');
-      });
+      setupMock(
+        calls,
+        fromBranchMockHandler({
+          branch: 'main',
+          hasLocal: true,
+          hasOrigin: false,
+          localMb: SHA_LOCAL,
+        }),
+      );
 
-      await getAllFileDiffsFromBranch('/repo', 'feature', undefined);
+      await getAllFileDiffsFromBranch(uniqueRepoPath(), 'feature', undefined);
+
+      const mergeBaseCall = calls.find((a) => a[0] === 'merge-base' && a[1] !== '--is-ancestor');
+      expect(mergeBaseCall).toBeDefined();
+      expect(mergeBaseCall).toContain('main');
+    });
+
+    it('feeds the picked merge-base SHA into the diff command', async () => {
+      const calls: string[][] = [];
+      setupMock(
+        calls,
+        fromBranchMockHandler({
+          branch: 'develop',
+          hasLocal: true,
+          hasOrigin: false,
+          localMb: SHA_LOCAL,
+        }),
+      );
+
+      await getAllFileDiffsFromBranch(uniqueRepoPath(), 'feature', 'develop');
 
       const diffCall = calls.find((a) => a[0] === 'diff');
       expect(diffCall).toBeDefined();
-      const refSpec = diffCall?.[2] ?? '';
-      expect(refSpec).toMatch(/^main\.\.\./);
-    });
-
-    it("uses the provided baseBranch when it is 'develop' (no remote)", async () => {
-      const calls: string[][] = [];
-      setupMock(calls, (argsArr, cb) => {
-        const isRemoteCheck = argsArr[0] === 'rev-parse' && argsArr[2]?.startsWith('refs/remotes/');
-        cb(isRemoteCheck ? new Error('no remote') : null, '', '');
-      });
-
-      await getAllFileDiffsFromBranch('/repo', 'feature', 'develop');
-
-      const diffCall = calls.find((a) => a[0] === 'diff');
-      expect(diffCall).toBeDefined();
-      const refSpec = diffCall?.[2] ?? '';
-      expect(refSpec).toBe('develop...feature');
-    });
-
-    it("uses 'origin/develop' when baseBranch 'develop' has a remote-tracking ref", async () => {
-      const calls: string[][] = [];
-      setupMock(calls, (_argsArr, cb) => {
-        cb(null, '', '');
-      });
-
-      await getAllFileDiffsFromBranch('/repo', 'feature', 'develop');
-
-      const diffCall = calls.find((a) => a[0] === 'diff');
-      const refSpec = diffCall?.[2] ?? '';
-      expect(refSpec).toBe('origin/develop...feature');
+      expect(diffCall).toContain(SHA_LOCAL);
+      expect(diffCall).toContain('feature');
     });
   });
 
   describe('getChangedFilesFromBranch', () => {
-    it("uses 'develop' directly when baseBranch is 'develop' (no remote)", async () => {
+    it('falls back to detected main branch when baseBranch is undefined', async () => {
       const calls: string[][] = [];
-      setupMock(calls, (argsArr, cb) => {
-        const isRemoteCheck = argsArr[0] === 'rev-parse' && argsArr[2]?.startsWith('refs/remotes/');
-        cb(isRemoteCheck ? new Error('no remote') : null, '', '');
-      });
+      setupMock(
+        calls,
+        fromBranchMockHandler({
+          branch: 'main',
+          hasLocal: true,
+          hasOrigin: false,
+          localMb: SHA_LOCAL,
+        }),
+      );
 
-      await getChangedFilesFromBranch('/repo', 'feature', 'develop');
+      await getChangedFilesFromBranch(uniqueRepoPath(), 'feature', undefined);
 
-      const diffCall = calls.find((a) => a[0] === 'diff');
-      const tripleRef = diffCall?.find((arg) => arg.includes('...')) ?? '';
-      expect(tripleRef).toBe('develop...feature');
+      const mergeBaseCall = calls.find((a) => a[0] === 'merge-base' && a[1] !== '--is-ancestor');
+      expect(mergeBaseCall).toBeDefined();
+      expect(mergeBaseCall).toContain('main');
     });
 
-    it("uses 'origin/develop' when baseBranch 'develop' has a remote-tracking ref", async () => {
+    it('feeds the picked merge-base SHA into the diff command', async () => {
       const calls: string[][] = [];
-      setupMock(calls, (_argsArr, cb) => {
-        cb(null, '', '');
-      });
+      setupMock(
+        calls,
+        fromBranchMockHandler({
+          branch: 'develop',
+          hasLocal: true,
+          hasOrigin: false,
+          localMb: SHA_LOCAL,
+        }),
+      );
 
-      await getChangedFilesFromBranch('/repo', 'feature', 'develop');
+      await getChangedFilesFromBranch(uniqueRepoPath(), 'feature', 'develop');
 
       const diffCall = calls.find((a) => a[0] === 'diff');
-      const tripleRef = diffCall?.find((arg) => arg.includes('...')) ?? '';
-      expect(tripleRef).toBe('origin/develop...feature');
+      expect(diffCall).toBeDefined();
+      expect(diffCall).toContain(SHA_LOCAL);
+      expect(diffCall).toContain('feature');
     });
   });
 
   describe('getFileDiffFromBranch', () => {
-    it("uses 'develop' directly when baseBranch is 'develop' (no remote)", async () => {
+    it('feeds the picked merge-base SHA into the diff and the show command', async () => {
       const calls: string[][] = [];
-      setupMock(calls, (argsArr, cb) => {
-        const isRemoteCheck = argsArr[0] === 'rev-parse' && argsArr[2]?.startsWith('refs/remotes/');
-        cb(isRemoteCheck ? new Error('no remote') : null, '', '');
-      });
+      setupMock(
+        calls,
+        fromBranchMockHandler({
+          branch: 'develop',
+          hasLocal: true,
+          hasOrigin: false,
+          localMb: SHA_LOCAL,
+        }),
+      );
 
-      await getFileDiffFromBranch('/repo', 'feature', 'src/foo.ts', 'develop');
+      await getFileDiffFromBranch(uniqueRepoPath(), 'feature', 'src/foo.ts', 'develop');
 
       const diffCall = calls.find((a) => a[0] === 'diff');
-      const tripleRef = diffCall?.find((arg) => arg.includes('...')) ?? '';
-      expect(tripleRef).toBe('develop...feature');
+      expect(diffCall).toBeDefined();
+      expect(diffCall).toContain(SHA_LOCAL);
+      expect(diffCall).toContain('feature');
+
+      // The redundant inline `git merge-base baseRef branchName` is gone — the
+      // only merge-base calls should be the picker's two probes plus optional
+      // is-ancestor checks.
+      const mergeBaseCalls = calls.filter((a) => a[0] === 'merge-base');
+      const ancestorCalls = mergeBaseCalls.filter((a) => a[1] === '--is-ancestor');
+      const probeCalls = mergeBaseCalls.filter((a) => a[1] !== '--is-ancestor');
+      expect(probeCalls.length).toBeLessThanOrEqual(2);
+      expect(ancestorCalls.length).toBeLessThanOrEqual(2);
     });
+  });
+});
 
-    it("uses 'origin/develop' when baseBranch 'develop' has a remote-tracking ref", async () => {
-      const calls: string[][] = [];
-      setupMock(calls, (_argsArr, cb) => {
-        cb(null, '', '');
-      });
+describe('pickMergeBase (via getChangedFilesFromBranch)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
 
-      await getFileDiffFromBranch('/repo', 'feature', 'src/foo.ts', 'develop');
+  it('picks local merge-base when origin merge-base is its ancestor', async () => {
+    const calls: string[][] = [];
+    setupMock(
+      calls,
+      fromBranchMockHandler({
+        branch: 'main',
+        hasLocal: true,
+        hasOrigin: true,
+        localMb: SHA_LOCAL,
+        originMb: SHA_ORIGIN,
+        originIsAncestorOfLocal: true,
+      }),
+    );
 
-      const diffCall = calls.find((a) => a[0] === 'diff');
-      const tripleRef = diffCall?.find((arg) => arg.includes('...')) ?? '';
-      expect(tripleRef).toBe('origin/develop...feature');
-    });
+    await getChangedFilesFromBranch(uniqueRepoPath(), 'feature', 'main');
+
+    const diffCall = calls.find((a) => a[0] === 'diff');
+    expect(diffCall).toContain(SHA_LOCAL);
+    expect(diffCall).not.toContain(SHA_ORIGIN);
+  });
+
+  it('picks origin merge-base when local merge-base is its ancestor', async () => {
+    const calls: string[][] = [];
+    setupMock(
+      calls,
+      fromBranchMockHandler({
+        branch: 'main',
+        hasLocal: true,
+        hasOrigin: true,
+        localMb: SHA_LOCAL,
+        originMb: SHA_ORIGIN,
+        originIsAncestorOfLocal: false,
+        localIsAncestorOfOrigin: true,
+      }),
+    );
+
+    await getChangedFilesFromBranch(uniqueRepoPath(), 'feature', 'main');
+
+    const diffCall = calls.find((a) => a[0] === 'diff');
+    expect(diffCall).toContain(SHA_ORIGIN);
+    expect(diffCall).not.toContain(SHA_LOCAL);
+  });
+
+  it('prefers local on divergence (neither merge-base is an ancestor of the other)', async () => {
+    const calls: string[][] = [];
+    setupMock(
+      calls,
+      fromBranchMockHandler({
+        branch: 'main',
+        hasLocal: true,
+        hasOrigin: true,
+        localMb: SHA_LOCAL,
+        originMb: SHA_ORIGIN,
+        originIsAncestorOfLocal: false,
+        localIsAncestorOfOrigin: false,
+      }),
+    );
+
+    await getChangedFilesFromBranch(uniqueRepoPath(), 'feature', 'main');
+
+    const diffCall = calls.find((a) => a[0] === 'diff');
+    expect(diffCall).toContain(SHA_LOCAL);
+    expect(diffCall).not.toContain(SHA_ORIGIN);
+  });
+
+  it('uses local merge-base when only the local ref exists', async () => {
+    const calls: string[][] = [];
+    setupMock(
+      calls,
+      fromBranchMockHandler({
+        branch: 'main',
+        hasLocal: true,
+        hasOrigin: false,
+        localMb: SHA_LOCAL,
+      }),
+    );
+
+    await getChangedFilesFromBranch(uniqueRepoPath(), 'feature', 'main');
+
+    const diffCall = calls.find((a) => a[0] === 'diff');
+    expect(diffCall).toContain(SHA_LOCAL);
+
+    const ancestorCalls = calls.filter((a) => a[0] === 'merge-base' && a[1] === '--is-ancestor');
+    expect(ancestorCalls.length).toBe(0);
+  });
+
+  it('uses origin merge-base when only the remote ref exists', async () => {
+    const calls: string[][] = [];
+    setupMock(
+      calls,
+      fromBranchMockHandler({
+        branch: 'main',
+        hasLocal: false,
+        hasOrigin: true,
+        originMb: SHA_ORIGIN,
+      }),
+    );
+
+    await getChangedFilesFromBranch(uniqueRepoPath(), 'feature', 'main');
+
+    const diffCall = calls.find((a) => a[0] === 'diff');
+    expect(diffCall).toContain(SHA_ORIGIN);
+  });
+
+  it('returns no committed diff when neither ref resolves', async () => {
+    const calls: string[][] = [];
+    setupMock(
+      calls,
+      fromBranchMockHandler({
+        branch: 'gone',
+        hasLocal: false,
+        hasOrigin: false,
+      }),
+    );
+
+    const result = await getChangedFilesFromBranch(uniqueRepoPath(), 'feature', 'gone');
+
+    // detectMergeBase falls back to headRef ('feature'), so the diff range
+    // becomes feature..feature → empty.
+    expect(result).toEqual([]);
+
+    const ancestorCalls = calls.filter((a) => a[0] === 'merge-base' && a[1] === '--is-ancestor');
+    expect(ancestorCalls.length).toBe(0);
+  });
+
+  it('uses the shared SHA when local and origin merge-bases are identical', async () => {
+    const calls: string[][] = [];
+    setupMock(
+      calls,
+      fromBranchMockHandler({
+        branch: 'main',
+        hasLocal: true,
+        hasOrigin: true,
+        localMb: SHA_LOCAL,
+        originMb: SHA_LOCAL, // identical
+      }),
+    );
+
+    await getChangedFilesFromBranch(uniqueRepoPath(), 'feature', 'main');
+
+    const diffCall = calls.find((a) => a[0] === 'diff');
+    expect(diffCall).toContain(SHA_LOCAL);
+
+    // Identical SHAs short-circuit before any --is-ancestor probe.
+    const ancestorCalls = calls.filter((a) => a[0] === 'merge-base' && a[1] === '--is-ancestor');
+    expect(ancestorCalls.length).toBe(0);
   });
 });
 
@@ -465,11 +703,10 @@ describe('getChangedFiles (worktree-based, merge-base diff)', () => {
       expect(diffCall).toContain(MERGE_BASE);
     });
 
-    it('should compute merge-base against origin/<branch> when the remote ref exists', async () => {
-      // Regression: when local main is stale (behind origin/main) and the
-      // worktree was branched from origin/main, using bare `main` resolves
-      // to stale refs/heads/main and the diff leaks the origin-vs-local
-      // delta into the feature diff.
+    it('probes both local and origin refs when both exist', async () => {
+      // The picker must consult both candidate refs so it can compare which
+      // merge-base is closer to HEAD; a regression that always preferred one
+      // side (the previous bug) would only invoke merge-base for that side.
       const calls: string[][] = [];
       const baseHandler = buildWorktreeMockHandler({
         committedRawNumstat: rawNumstatEntry('feat.ts', 1, 0),
@@ -478,7 +715,7 @@ describe('getChangedFiles (worktree-based, merge-base diff)', () => {
         if (
           args[0] === 'rev-parse' &&
           args[1] === '--verify' &&
-          args[2] === 'refs/remotes/origin/main'
+          (args[2] === 'refs/remotes/origin/main' || args[2] === 'refs/heads/main')
         ) {
           cb(null, 'ref-exists\n', '');
           return;
@@ -488,10 +725,12 @@ describe('getChangedFiles (worktree-based, merge-base diff)', () => {
 
       await getChangedFiles(uniqueWorktreePath(), 'main');
 
-      const mergeBaseCall = calls.find((a) => a[0] === 'merge-base');
-      expect(mergeBaseCall).toBeDefined();
-      expect(mergeBaseCall).toContain('origin/main');
-      expect(mergeBaseCall).not.toContain('main');
+      const mergeBaseProbes = calls.filter(
+        (a) => a[0] === 'merge-base' && a[1] !== '--is-ancestor',
+      );
+      const probedRefs = mergeBaseProbes.map((a) => a[1]);
+      expect(probedRefs).toContain('main');
+      expect(probedRefs).toContain('origin/main');
     });
   });
 
