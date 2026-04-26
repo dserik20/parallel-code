@@ -10,6 +10,7 @@ coverage
 .DS_Store
 docs/
 graphify-out/
+/install.sh
 
 # Sandbox bind-mount artifacts from user home (not project files).
 # Root-anchored so legitimate nested files with these names are still tracked.
