@@ -316,6 +316,35 @@ html[data-look='zenburnesque'] {
   --task-panel-bg: #2e2d2a;
 }
 
+/* Islands Dark — JetBrains 2025.3 inspired: lighter tinted frame, darker uniform island panels.
+   Frame uses a color→gray radial reminiscent of JetBrains' "Project Gradient". */
+html[data-look='islands-dark'] {
+  --bg: radial-gradient(circle at 0% 0%, #3a76d6 0%, #2c3a4d 8%, #26282c 18%);
+  --bg-elevated: #1d1f24;
+  --bg-input: #13151a;
+  --bg-hover: #262a30;
+  --bg-selected: #25324d;
+  --bg-selected-subtle: #25324d40;
+  --border: #3a3d43;
+  --border-subtle: #2a2c30;
+  --border-focus: #548af7;
+  --fg: #bcbec4;
+  --fg-muted: #9a9da4;
+  --fg-subtle: #7a7e85;
+  --accent: #548af7;
+  --accent-hover: #6d9df8;
+  --accent-text: #ffffff;
+  --link: #6d9df8;
+  --success: #6aab73;
+  --error: #f75464;
+  --warning: #e8a33e;
+  --island-bg: #181a1d;
+  --island-border: #3a3d43;
+  --island-radius: 12px;
+  --task-container-bg: #181a1d;
+  --task-panel-bg: #1d1f24;
+}
+
 .app-shell[data-look='minimal']::before {
   opacity: 0 !important;
   background: none !important;
@@ -324,6 +353,11 @@ html[data-look='zenburnesque'] {
 .app-shell[data-look='minimal'] .task-column.active {
   box-shadow: none;
   border-color: color-mix(in srgb, var(--border) 85%, transparent) !important;
+}
+
+.app-shell[data-look='islands-dark']::before {
+  opacity: 0 !important;
+  background: none !important;
 }
 
 * {

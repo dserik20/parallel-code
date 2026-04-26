@@ -76,6 +76,14 @@ const presetColors: Record<LookPreset, PresetColors> = {
     border: '#484640',
     accent: '#cc9393',
   },
+  'islands-dark': {
+    bgElevated: '#1d1f24',
+    fg: '#bcbec4',
+    fgMuted: '#9a9da4',
+    fgSubtle: '#7a7e85',
+    border: '#3a3d43',
+    accent: '#548af7',
+  },
 };
 
 function buildThemeData(c: PresetColors): monaco.editor.IStandaloneThemeData {
