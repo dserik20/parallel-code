@@ -1,9 +1,10 @@
-import { createMemo } from 'solid-js';
+import { createMemo, Show } from 'solid-js';
 import {
   getCompletedTasksTodayCount,
   getMergedLineTotals,
   toggleHelpDialog,
   toggleArena,
+  store,
 } from '../store/store';
 import { theme } from '../lib/theme';
 import { sf } from '../lib/fontScale';
@@ -25,68 +26,70 @@ export function SidebarFooter() {
           'flex-shrink': '0',
         }}
       >
-        <span
-          style={{
-            'font-size': sf(11),
-            color: theme.fgSubtle,
-            'text-transform': 'uppercase',
-            'letter-spacing': '0.05em',
-          }}
-        >
-          Progress
-        </span>
-        <div
-          style={{
-            display: 'flex',
-            'align-items': 'center',
-            'justify-content': 'space-between',
-            background: theme.bgInput,
-            border: `1px solid ${theme.border}`,
-            'border-radius': '8px',
-            padding: '8px 10px',
-            'font-size': sf(12),
-            color: theme.fgMuted,
-          }}
-        >
-          <span>Completed today</span>
+        <Show when={store.showSidebarProgress}>
           <span
             style={{
-              color: theme.fg,
-              'font-weight': '600',
-              'font-variant-numeric': 'tabular-nums',
+              'font-size': sf(11),
+              color: theme.fgSubtle,
+              'text-transform': 'uppercase',
+              'letter-spacing': '0.05em',
             }}
           >
-            {completedTasksToday()}
+            Progress
           </span>
-        </div>
-        <div
-          style={{
-            display: 'flex',
-            'align-items': 'center',
-            'justify-content': 'space-between',
-            background: theme.bgInput,
-            border: `1px solid ${theme.border}`,
-            'border-radius': '8px',
-            padding: '8px 10px',
-            'font-size': sf(12),
-            color: theme.fgMuted,
-          }}
-        >
-          <span>Merged to main/master</span>
-          <span
+          <div
             style={{
-              color: theme.fg,
-              'font-weight': '600',
-              'font-variant-numeric': 'tabular-nums',
               display: 'flex',
               'align-items': 'center',
-              gap: '8px',
+              'justify-content': 'space-between',
+              background: theme.bgInput,
+              border: `1px solid ${theme.border}`,
+              'border-radius': '8px',
+              padding: '8px 10px',
+              'font-size': sf(12),
+              color: theme.fgMuted,
             }}
           >
-            <span style={{ color: theme.success }}>+{mergedLines().added.toLocaleString()}</span>
-            <span style={{ color: theme.error }}>-{mergedLines().removed.toLocaleString()}</span>
-          </span>
-        </div>
+            <span>Completed today</span>
+            <span
+              style={{
+                color: theme.fg,
+                'font-weight': '600',
+                'font-variant-numeric': 'tabular-nums',
+              }}
+            >
+              {completedTasksToday()}
+            </span>
+          </div>
+          <div
+            style={{
+              display: 'flex',
+              'align-items': 'center',
+              'justify-content': 'space-between',
+              background: theme.bgInput,
+              border: `1px solid ${theme.border}`,
+              'border-radius': '8px',
+              padding: '8px 10px',
+              'font-size': sf(12),
+              color: theme.fgMuted,
+            }}
+          >
+            <span>Merged to main/master</span>
+            <span
+              style={{
+                color: theme.fg,
+                'font-weight': '600',
+                'font-variant-numeric': 'tabular-nums',
+                display: 'flex',
+                'align-items': 'center',
+                gap: '8px',
+              }}
+            >
+              <span style={{ color: theme.success }}>+{mergedLines().added.toLocaleString()}</span>
+              <span style={{ color: theme.error }}>-{mergedLines().removed.toLocaleString()}</span>
+            </span>
+          </div>
+        </Show>
         <button
           onClick={() => toggleArena(true)}
           style={{
@@ -104,7 +107,7 @@ export function SidebarFooter() {
             cursor: 'pointer',
             'font-family': 'inherit',
             'font-weight': '500',
-            'margin-top': '6px',
+            'margin-top': store.showSidebarProgress ? '6px' : '0',
           }}
         >
           <svg
@@ -125,79 +128,81 @@ export function SidebarFooter() {
       </div>
 
       {/* Tips */}
-      <div
-        onClick={() => toggleHelpDialog(true)}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault();
-            toggleHelpDialog(true);
-          }
-        }}
-        tabIndex={0}
-        role="button"
-        style={{
-          'border-top': `1px solid ${theme.border}`,
-          'padding-top': '12px',
-          display: 'flex',
-          'flex-direction': 'column',
-          gap: '6px',
-          'flex-shrink': '0',
-          cursor: 'pointer',
-        }}
-      >
-        <span
+      <Show when={store.showSidebarTips}>
+        <div
+          onClick={() => toggleHelpDialog(true)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              toggleHelpDialog(true);
+            }
+          }}
+          tabIndex={0}
+          role="button"
           style={{
-            'font-size': sf(11),
-            color: theme.fgSubtle,
-            'text-transform': 'uppercase',
-            'letter-spacing': '0.05em',
+            'border-top': `1px solid ${theme.border}`,
+            'padding-top': '12px',
+            display: 'flex',
+            'flex-direction': 'column',
+            gap: '6px',
+            'flex-shrink': '0',
+            cursor: 'pointer',
           }}
         >
-          Tips
-        </span>
-        <span
-          style={{
-            'font-size': sf(12),
-            color: theme.fgMuted,
-            'line-height': '1.4',
-          }}
-        >
-          <kbd
+          <span
             style={{
-              background: theme.bgInput,
-              border: `1px solid ${theme.border}`,
-              'border-radius': '3px',
-              padding: '1px 4px',
               'font-size': sf(11),
-              'font-family': "'JetBrains Mono', monospace",
+              color: theme.fgSubtle,
+              'text-transform': 'uppercase',
+              'letter-spacing': '0.05em',
             }}
           >
-            {alt} + Arrows
-          </kbd>{' '}
-          to navigate panels
-        </span>
-        <span
-          style={{
-            'font-size': sf(12),
-            color: theme.fgMuted,
-            'line-height': '1.4',
-          }}
-        >
-          <kbd
+            Tips
+          </span>
+          <span
             style={{
-              background: theme.bgInput,
-              border: `1px solid ${theme.border}`,
-              'border-radius': '3px',
-              padding: '1px 4px',
-              'font-size': sf(11),
-              'font-family': "'JetBrains Mono', monospace",
+              'font-size': sf(12),
+              color: theme.fgMuted,
+              'line-height': '1.4',
             }}
           >
-            {mod} + /
-          </kbd>{' '}
-          for all shortcuts
-        </span>
-      </div>
+            <kbd
+              style={{
+                background: theme.bgInput,
+                border: `1px solid ${theme.border}`,
+                'border-radius': '3px',
+                padding: '1px 4px',
+                'font-size': sf(11),
+                'font-family': "'JetBrains Mono', monospace",
+              }}
+            >
+              {alt} + Arrows
+            </kbd>{' '}
+            to navigate panels
+          </span>
+          <span
+            style={{
+              'font-size': sf(12),
+              color: theme.fgMuted,
+              'line-height': '1.4',
+            }}
+          >
+            <kbd
+              style={{
+                background: theme.bgInput,
+                border: `1px solid ${theme.border}`,
+                'border-radius': '3px',
+                padding: '1px 4px',
+                'font-size': sf(11),
+                'font-family': "'JetBrains Mono', monospace",
+              }}
+            >
+              {mod} + /
+            </kbd>{' '}
+            for all shortcuts
+          </span>
+        </div>
+      </Show>
     </>
   );
 }

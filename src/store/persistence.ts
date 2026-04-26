@@ -55,6 +55,8 @@ export async function saveState(): Promise<void> {
     autoTrustFolders: store.autoTrustFolders,
     showPlans: store.showPlans,
     showSteps: store.showSteps,
+    showSidebarTips: store.showSidebarTips,
+    showSidebarProgress: store.showSidebarProgress,
     desktopNotificationsEnabled: store.desktopNotificationsEnabled,
     inactiveColumnOpacity: store.inactiveColumnOpacity,
     editorCommand: store.editorCommand || undefined,
@@ -238,6 +240,8 @@ interface LegacyPersistedState {
   autoTrustFolders?: unknown;
   showPlans?: unknown;
   showSteps?: unknown;
+  showSidebarTips?: unknown;
+  showSidebarProgress?: unknown;
   desktopNotificationsEnabled?: unknown;
   inactiveColumnOpacity?: unknown;
   editorCommand?: unknown;
@@ -364,6 +368,9 @@ export async function loadState(): Promise<void> {
       s.autoTrustFolders = typeof raw.autoTrustFolders === 'boolean' ? raw.autoTrustFolders : false;
       s.showPlans = typeof raw.showPlans === 'boolean' ? raw.showPlans : true;
       s.showSteps = typeof raw.showSteps === 'boolean' ? raw.showSteps : false;
+      s.showSidebarTips = typeof raw.showSidebarTips === 'boolean' ? raw.showSidebarTips : true;
+      s.showSidebarProgress =
+        typeof raw.showSidebarProgress === 'boolean' ? raw.showSidebarProgress : true;
       s.desktopNotificationsEnabled =
         typeof raw.desktopNotificationsEnabled === 'boolean'
           ? raw.desktopNotificationsEnabled

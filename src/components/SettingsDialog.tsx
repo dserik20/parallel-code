@@ -15,6 +15,8 @@ import {
   setAutoTrustFolders,
   setShowPlans,
   setShowPromptInput,
+  setShowSidebarTips,
+  setShowSidebarProgress,
   setFontSmoothing,
   setDesktopNotificationsEnabled,
   setInactiveColumnOpacity,
@@ -245,6 +247,60 @@ export function SettingsDialog(props: SettingsDialogProps) {
             </span>
             <span style={{ 'font-size': '12px', color: theme.fgSubtle }}>
               When hidden, the terminal occupies the full panel and auto-focuses on activation
+            </span>
+          </div>
+        </label>
+        <label
+          style={{
+            display: 'flex',
+            'align-items': 'center',
+            gap: '10px',
+            cursor: 'pointer',
+            padding: '8px 12px',
+            'border-radius': '8px',
+            background: theme.bgInput,
+            border: `1px solid ${theme.border}`,
+          }}
+        >
+          <input
+            type="checkbox"
+            checked={store.showSidebarProgress}
+            onChange={(e) => setShowSidebarProgress(e.currentTarget.checked)}
+            style={{ 'accent-color': theme.accent, cursor: 'pointer' }}
+          />
+          <div style={{ display: 'flex', 'flex-direction': 'column', gap: '2px' }}>
+            <span style={{ 'font-size': '14px', color: theme.fg }}>
+              Show progress section in sidebar
+            </span>
+            <span style={{ 'font-size': '12px', color: theme.fgSubtle }}>
+              Daily completed-task count and merged-line totals at the bottom of the sidebar
+            </span>
+          </div>
+        </label>
+        <label
+          style={{
+            display: 'flex',
+            'align-items': 'center',
+            gap: '10px',
+            cursor: 'pointer',
+            padding: '8px 12px',
+            'border-radius': '8px',
+            background: theme.bgInput,
+            border: `1px solid ${theme.border}`,
+          }}
+        >
+          <input
+            type="checkbox"
+            checked={store.showSidebarTips}
+            onChange={(e) => setShowSidebarTips(e.currentTarget.checked)}
+            style={{ 'accent-color': theme.accent, cursor: 'pointer' }}
+          />
+          <div style={{ display: 'flex', 'flex-direction': 'column', gap: '2px' }}>
+            <span style={{ 'font-size': '14px', color: theme.fg }}>
+              Show tips section in sidebar
+            </span>
+            <span style={{ 'font-size': '12px', color: theme.fgSubtle }}>
+              Keyboard shortcut hints at the bottom of the sidebar
             </span>
           </div>
         </label>

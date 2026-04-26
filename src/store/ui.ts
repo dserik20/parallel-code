@@ -85,6 +85,14 @@ export function setShowPlans(showPlans: boolean): void {
   setStore('showPlans', showPlans);
 }
 
+export function setShowSidebarTips(show: boolean): void {
+  setStore('showSidebarTips', show);
+}
+
+export function setShowSidebarProgress(show: boolean): void {
+  setStore('showSidebarProgress', show);
+}
+
 export function setShowPromptInput(show: boolean): void {
   setStore('showPromptInput', show);
 }

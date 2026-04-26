@@ -44,6 +44,8 @@ export const [store, setStore] = createStore<AppStore>({
   autoTrustFolders: false,
   showPlans: true,
   showSteps: false,
+  showSidebarTips: true,
+  showSidebarProgress: true,
   desktopNotificationsEnabled: false,
   inactiveColumnOpacity: 0.6,
   editorCommand: '',

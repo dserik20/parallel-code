@@ -147,6 +147,8 @@ export interface PersistedState {
   autoTrustFolders?: boolean;
   showPlans?: boolean;
   showSteps?: boolean;
+  showSidebarTips?: boolean;
+  showSidebarProgress?: boolean;
   desktopNotificationsEnabled?: boolean;
   inactiveColumnOpacity?: number;
   editorCommand?: string;
@@ -220,6 +222,8 @@ export interface AppStore {
   autoTrustFolders: boolean;
   showPlans: boolean;
   showSteps: boolean;
+  showSidebarTips: boolean;
+  showSidebarProgress: boolean;
   desktopNotificationsEnabled: boolean;
   inactiveColumnOpacity: number;
   editorCommand: string;

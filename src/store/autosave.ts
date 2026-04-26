@@ -26,6 +26,8 @@ function persistedSnapshot(): string {
     autoTrustFolders: store.autoTrustFolders,
     showPlans: store.showPlans,
     showSteps: store.showSteps,
+    showSidebarTips: store.showSidebarTips,
+    showSidebarProgress: store.showSidebarProgress,
     desktopNotificationsEnabled: store.desktopNotificationsEnabled,
     inactiveColumnOpacity: store.inactiveColumnOpacity,
     editorCommand: store.editorCommand,

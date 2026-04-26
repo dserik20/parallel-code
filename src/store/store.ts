@@ -105,6 +105,8 @@ export {
   setAutoTrustFolders,
   setShowPlans,
   setShowPromptInput,
+  setShowSidebarTips,
+  setShowSidebarProgress,
   setFontSmoothing,
   setDesktopNotificationsEnabled,
   setInactiveColumnOpacity,

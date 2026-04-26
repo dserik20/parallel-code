@@ -372,8 +372,16 @@ export function Sidebar() {
           </div>
         </div>
 
-        {/* Projects section */}
-        <div style={{ display: 'flex', 'flex-direction': 'column', gap: '6px' }}>
+        {/* Projects section — outer enforces the same floor as the tasks list
+            (only when populated, so empty state stays compact) */}
+        <div
+          style={{
+            display: 'flex',
+            'flex-direction': 'column',
+            gap: '6px',
+            'min-height': store.projects.length > 0 ? '170px' : '0',
+          }}
+        >
           <div
             style={{
               display: 'flex',
@@ -404,97 +412,112 @@ export function Sidebar() {
             />
           </div>
 
-          <For each={store.projects}>
-            {(project) => (
-              <div
-                role="button"
-                tabIndex={0}
-                data-project-id={project.id}
-                onClick={() => setEditingProject(project)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') setEditingProject(project);
-                }}
-                style={{
-                  display: 'flex',
-                  'align-items': 'center',
-                  gap: '6px',
-                  padding: '4px 6px',
-                  'border-radius': '6px',
-                  background: isProjectMissing(project.id)
-                    ? `color-mix(in srgb, ${theme.warning} 8%, ${theme.bgInput})`
-                    : theme.bgInput,
-                  'font-size': sf(12),
-                  cursor: 'pointer',
-                  border:
-                    store.sidebarFocused && store.sidebarFocusedProjectId === project.id
-                      ? `1.5px solid var(--border-focus)`
-                      : '1.5px solid transparent',
-                }}
-              >
+          {/* Scrollable project list — fills the outer (which carries the
+              floor); caps at 40vh so tasks below get a fair share */}
+          <div
+            style={{
+              display: 'flex',
+              'flex-direction': 'column',
+              gap: '6px',
+              flex: '1',
+              'min-height': '0',
+              'max-height': '40vh',
+              'overflow-y': 'auto',
+            }}
+          >
+            <For each={store.projects}>
+              {(project) => (
                 <div
-                  style={{
-                    width: '8px',
-                    height: '8px',
-                    'border-radius': '50%',
-                    background: project.color,
-                    'flex-shrink': '0',
+                  role="button"
+                  tabIndex={0}
+                  data-project-id={project.id}
+                  onClick={() => setEditingProject(project)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') setEditingProject(project);
                   }}
-                />
-                <div style={{ flex: '1', 'min-width': '0', overflow: 'hidden' }}>
-                  <div
-                    style={{
-                      color: theme.fg,
-                      'font-weight': '500',
-                      'white-space': 'nowrap',
-                      overflow: 'hidden',
-                      'text-overflow': 'ellipsis',
-                    }}
-                  >
-                    {project.name}
-                  </div>
-                  <div
-                    style={{
-                      color: isProjectMissing(project.id) ? theme.warning : theme.fgSubtle,
-                      'font-size': sf(11),
-                      'white-space': 'nowrap',
-                      overflow: 'hidden',
-                      'text-overflow': 'ellipsis',
-                    }}
-                  >
-                    {isProjectMissing(project.id)
-                      ? 'Folder not found'
-                      : abbreviatePath(project.path)}
-                  </div>
-                </div>
-                <button
-                  class="icon-btn"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setConfirmRemove(project.id);
-                  }}
-                  title="Remove project"
                   style={{
-                    background: 'transparent',
-                    border: 'none',
-                    color: theme.fgSubtle,
+                    display: 'flex',
+                    'align-items': 'center',
+                    gap: '6px',
+                    padding: '4px 6px',
+                    'border-radius': '6px',
+                    background: isProjectMissing(project.id)
+                      ? `color-mix(in srgb, ${theme.warning} 8%, ${theme.bgInput})`
+                      : theme.bgInput,
+                    'font-size': sf(12),
                     cursor: 'pointer',
-                    'font-size': sf(13),
-                    'line-height': '1',
-                    padding: '0 2px',
+                    border:
+                      store.sidebarFocused && store.sidebarFocusedProjectId === project.id
+                        ? `1.5px solid var(--border-focus)`
+                        : '1.5px solid transparent',
                     'flex-shrink': '0',
                   }}
                 >
-                  &times;
-                </button>
-              </div>
-            )}
-          </For>
+                  <div
+                    style={{
+                      width: '8px',
+                      height: '8px',
+                      'border-radius': '50%',
+                      background: project.color,
+                      'flex-shrink': '0',
+                    }}
+                  />
+                  <div style={{ flex: '1', 'min-width': '0', overflow: 'hidden' }}>
+                    <div
+                      style={{
+                        color: theme.fg,
+                        'font-weight': '500',
+                        'white-space': 'nowrap',
+                        overflow: 'hidden',
+                        'text-overflow': 'ellipsis',
+                      }}
+                    >
+                      {project.name}
+                    </div>
+                    <div
+                      style={{
+                        color: isProjectMissing(project.id) ? theme.warning : theme.fgSubtle,
+                        'font-size': sf(11),
+                        'white-space': 'nowrap',
+                        overflow: 'hidden',
+                        'text-overflow': 'ellipsis',
+                      }}
+                    >
+                      {isProjectMissing(project.id)
+                        ? 'Folder not found'
+                        : abbreviatePath(project.path)}
+                    </div>
+                  </div>
+                  <button
+                    class="icon-btn"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setConfirmRemove(project.id);
+                    }}
+                    title="Remove project"
+                    style={{
+                      background: 'transparent',
+                      border: 'none',
+                      color: theme.fgSubtle,
+                      cursor: 'pointer',
+                      'font-size': sf(13),
+                      'line-height': '1',
+                      padding: '0 2px',
+                      'flex-shrink': '0',
+                    }}
+                  >
+                    &times;
+                  </button>
+                </div>
+              )}
+            </For>
 
-          <Show when={store.projects.length === 0}>
-            <span style={{ 'font-size': sf(11), color: theme.fgSubtle, padding: '0 2px' }}>
-              No projects linked yet.
-            </span>
-          </Show>
+            <Show when={store.projects.length === 0}>
+              <span style={{ 'font-size': sf(11), color: theme.fgSubtle, padding: '0 2px' }}>
+                No projects linked yet.
+              </span>
+            </Show>
+          </div>
         </div>
 
         <div style={{ height: '1px', background: theme.border }} />
@@ -592,6 +615,7 @@ export function Sidebar() {
             'flex-direction': 'column',
             gap: '1px',
             flex: '1',
+            'min-height': '140px',
             overflow: 'auto',
             outline: 'none',
           }}
