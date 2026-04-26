@@ -5,6 +5,11 @@ export interface PanelChild {
   id: string;
   content: () => JSX.Element;
   minSize?: number;
+  /** Starting flex-basis for non-absorbers without a user-pinned size. Without
+   *  this, non-absorbers fall back to `auto` (content-sized), which in
+   *  horizontal splits lets wide intrinsic content (long file paths, long
+   *  titles) push the column far beyond its min. */
+  defaultSize?: number;
 }
 
 interface ResizablePanelProps {
@@ -76,6 +81,14 @@ export function ResizablePanel(props: ResizablePanelProps) {
     if (isAbsorber(child.id)) {
       return {
         flex: '1 1 0',
+        [minDim]: `${min}px`,
+        overflow: 'hidden',
+      };
+    }
+    if (child.defaultSize !== undefined) {
+      return {
+        flex: `0 0 ${child.defaultSize}px`,
+        [dim]: `${child.defaultSize}px`,
         [minDim]: `${min}px`,
         overflow: 'hidden',
       };

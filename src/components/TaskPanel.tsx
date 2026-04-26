@@ -430,6 +430,7 @@ export function TaskPanel(props: TaskPanelProps) {
               {
                 id: 'right-col',
                 minSize: 360,
+                defaultSize: 420,
                 content: () => (
                   <ResizablePanel
                     direction="vertical"
