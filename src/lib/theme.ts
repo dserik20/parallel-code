@@ -49,7 +49,7 @@ const terminalBackground: Record<LookPreset, string> = {
   glacier: '#232e3a',
   minimal: '#262626',
   zenburnesque: '#2e2d2a',
-  'islands-dark': '#1d1f24',
+  'islands-dark': '#181a1d',
 };
 
 /** Returns an xterm-compatible theme object for the given preset */

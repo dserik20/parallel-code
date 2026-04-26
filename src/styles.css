@@ -320,13 +320,13 @@ html[data-look='zenburnesque'] {
    Frame uses a color→gray radial reminiscent of JetBrains' "Project Gradient". */
 html[data-look='islands-dark'] {
   --bg: radial-gradient(circle at 0% 0%, #3a76d6 0%, #2c3a4d 8%, #26282c 18%);
-  --bg-elevated: #1d1f24;
-  --bg-input: #13151a;
-  --bg-hover: #262a30;
+  --bg-elevated: #181a1d;
+  --bg-input: #1e2126;
+  --bg-hover: #23262c;
   --bg-selected: #25324d;
   --bg-selected-subtle: #25324d40;
-  --border: #3a3d43;
-  --border-subtle: #2a2c30;
+  --border: #2c2f34;
+  --border-subtle: #232529;
   --border-focus: #548af7;
   --fg: #bcbec4;
   --fg-muted: #9a9da4;
@@ -339,10 +339,10 @@ html[data-look='islands-dark'] {
   --error: #f75464;
   --warning: #e8a33e;
   --island-bg: #181a1d;
-  --island-border: #3a3d43;
+  --island-border: #2c2f34;
   --island-radius: 12px;
   --task-container-bg: #181a1d;
-  --task-panel-bg: #1d1f24;
+  --task-panel-bg: #181a1d;
 }
 
 .app-shell[data-look='minimal']::before {
@@ -358,6 +358,72 @@ html[data-look='islands-dark'] {
 .app-shell[data-look='islands-dark']::before {
   opacity: 0 !important;
   background: none !important;
+}
+
+/* Islands Dark: prompt textarea sits flush in its panel (matches the notes
+   textarea pattern) instead of as a chromed input field. */
+html[data-look='islands-dark'] .prompt-input-panel {
+  padding: 0 !important;
+  border-radius: 0 !important;
+}
+
+html[data-look='islands-dark'] .prompt-textarea {
+  background: var(--task-panel-bg) !important;
+  border: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  padding: 6px 36px 6px 8px !important;
+}
+
+html[data-look='islands-dark'] .prompt-textarea:focus {
+  border: none !important;
+  box-shadow: none !important;
+}
+
+/* Soften the send button so it doesn't punch through the muted theme —
+   matches the notes panel's send-notes button (soft accent tint). */
+html[data-look='islands-dark'] .prompt-send-btn:not(:disabled) {
+  background: color-mix(in srgb, var(--accent) 14%, var(--bg-input)) !important;
+  color: var(--fg) !important;
+  border: 1px solid color-mix(in srgb, var(--accent) 28%, var(--border)) !important;
+}
+
+html[data-look='islands-dark'] .prompt-send-btn:disabled {
+  background: transparent !important;
+  color: var(--fg-subtle) !important;
+  border: 1px solid var(--border) !important;
+}
+
+/* Islands Dark: hairline between adjacent sub-panels (notes ↔ changed-files,
+   shell ↔ agent terminal, etc). Drawn inside the existing 6px resize-handle
+   so we don't change layout. Hidden during hover/drag — the handle's accent
+   color takes over. */
+html[data-look='islands-dark'] .resize-handle {
+  position: relative;
+}
+
+html[data-look='islands-dark'] .resize-handle-v::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 12px;
+  right: 12px;
+  height: 1px;
+  background: var(--border);
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+html[data-look='islands-dark'] .resize-handle-h::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 12px;
+  bottom: 12px;
+  width: 1px;
+  background: var(--border);
+  transform: translateX(-50%);
+  pointer-events: none;
 }
 
 * {

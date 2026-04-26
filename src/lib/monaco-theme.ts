@@ -77,11 +77,11 @@ const presetColors: Record<LookPreset, PresetColors> = {
     accent: '#cc9393',
   },
   'islands-dark': {
-    bgElevated: '#1d1f24',
+    bgElevated: '#181a1d',
     fg: '#bcbec4',
     fgMuted: '#9a9da4',
     fgSubtle: '#7a7e85',
-    border: '#3a3d43',
+    border: '#2c2f34',
     accent: '#548af7',
   },
 };
