@@ -5,10 +5,10 @@ export interface PanelChild {
   id: string;
   content: () => JSX.Element;
   minSize?: number;
-  /** Starting flex-basis for non-absorbers without a user-pinned size. Without
-   *  this, non-absorbers fall back to `auto` (content-sized), which in
-   *  horizontal splits lets wide intrinsic content (long file paths, long
-   *  titles) push the column far beyond its min. */
+  /** Starting flex-basis (px) for non-absorbers without a user-pinned size.
+   *  Without this, non-absorbers fall back to `auto` (content-sized), which
+   *  in horizontal splits lets wide intrinsic content push the column far
+   *  past its min. Use whenever content-driven sizing would surprise. */
   defaultSize?: number;
 }
 
